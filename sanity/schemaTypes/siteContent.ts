@@ -8,7 +8,7 @@ export default defineType({
     { name: 'about', title: 'About Page' },
     { name: 'inquire', title: 'Inquire Page' },
     { name: 'titles', title: 'Gallery Page Titles' },
-    { name: 'footer', title: 'Footer Content' }, // New Fieldset
+    { name: 'footer', title: 'Footer Content' },
   ],
   fields: [
     defineField({
@@ -18,6 +18,7 @@ export default defineType({
       description: 'Upload a white PNG with transparent background.',
       options: { hotspot: true }
     }),
+    
     // --- ABOUT PAGE ---
     defineField({
       name: 'aboutTitle',
@@ -40,6 +41,14 @@ export default defineType({
       fieldset: 'about',
       initialValue: 'We are a husband and wife team...'
     }),
+    defineField({
+      name: 'aboutSignature',
+      title: 'About Page Signature',
+      type: 'string',
+      fieldset: 'about', // Added this so it stays with About content
+      description: 'This will appear in a handwritten font (e.g., "Love, Quay & Christine")',
+      initialValue: 'Love, Quay & Christine',
+    }),
 
     // --- INQUIRE PAGE ---
     defineField({
@@ -54,6 +63,15 @@ export default defineType({
       title: 'Intro Text',
       type: 'text',
       fieldset: 'inquire',
+    }),
+    defineField({
+      name: 'inquireVideo',
+      title: 'Inquire Page Hero Video',
+      type: 'file', 
+      fieldset: 'inquire', // Added this so it appears in the Inquire group
+      options: {
+        accept: 'video/mp4,video/webm', 
+      },
     }),
     defineField({
       name: 'email',
@@ -85,6 +103,7 @@ export default defineType({
       fieldset: 'titles',
       initialValue: 'Cinematic Films'
     }),
+    
     // --- FOOTER CONTENT ---
     defineField({
       name: 'socialLinks',
@@ -109,20 +128,5 @@ export default defineType({
       initialValue: '© 2025 StoryCruz Films',
       description: 'The text that appears at the very bottom.'
     }),
-    defineField({
-  name: 'aboutSignature',
-  title: 'About Page Signature',
-  type: 'string',
-  description: 'This will appear in a handwritten font (e.g., "Love, Quay & Christine")',
-  initialValue: 'Love, Quay & Christine',
-   }),
-   defineField({
-  name: 'inquireVideo',
-  title: 'Inquire Page Hero Video',
-  type: 'file', // 'file' is best for hosting small background videos directly in Sanity
-  options: {
-    accept: 'video/mp4,video/webm', // Limit to video formats
-  },
-}),
   ],
 })
