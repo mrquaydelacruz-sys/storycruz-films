@@ -1,4 +1,3 @@
-// triggering a schema update
 import { defineField, defineType } from 'sanity'
 
 export default defineType({
@@ -8,7 +7,7 @@ export default defineType({
   fieldsets: [
     { name: 'about', title: 'About Page' },
     { name: 'inquire', title: 'Inquire Page' },
-    { name: 'photos', title: 'Photos Page' }, // The new group
+    { name: 'photos', title: 'Photos Page' },
     { name: 'titles', title: 'Gallery Page Titles' },
     { name: 'footer', title: 'Footer Content' },
   ],
@@ -21,7 +20,7 @@ export default defineType({
       options: { hotspot: true }
     }),
     
-    // --- PHOTOS PAGE (Only ONE definition here) ---
+    // --- PHOTOS PAGE ---
     defineField({
       name: 'photoHeaderImages',
       title: 'Photo Page Header Slideshow',
@@ -46,20 +45,37 @@ export default defineType({
       fieldset: 'about',
       options: { hotspot: true }
     }),
+    // 1. RESTORED MISSING FIELD: Bio Text
     defineField({
       name: 'aboutText',
       title: 'Bio Text',
       type: 'text',
-      fieldset: 'about',
-      initialValue: 'We are a husband and wife team...'
+      fieldset: 'about', 
     }),
+    // 2. RESTORED MISSING FIELD: Text Signature
     defineField({
       name: 'aboutSignature',
-      title: 'About Page Signature',
+      title: 'Signature Text (e.g. Quay, & Christine)',
       type: 'string',
       fieldset: 'about',
-      description: 'This will appear in a handwritten font (e.g., "Love, Quay & Christine")',
-      initialValue: 'Love, Quay & Christine',
+    }),
+    // 3. New GIF Field
+    defineField({
+      name: 'signatureGif',
+      title: 'Signature Animation (GIF)',
+      type: 'image',
+      fieldset: 'about',
+      description: 'Upload a transparent GIF of your signature writing itself (Overrides text).',
+      options: { hotspot: true }
+    }),
+    // 4. New Slideshow Field
+    defineField({
+      name: 'aboutSlideshow',
+      title: 'About Page Slideshow',
+      type: 'array',
+      fieldset: 'about',
+      description: 'Upload 6-10 photos to appear below your bio.',
+      of: [{ type: 'image', options: { hotspot: true } }],
     }),
 
     // --- INQUIRE PAGE ---
@@ -77,11 +93,10 @@ export default defineType({
       fieldset: 'inquire',
     }),
     defineField({
-      name: 'inquireHeroVideo', // Keeping the "Hero" name we fixed earlier
+      name: 'inquireHeroVideo',
       title: 'Inquire Page Hero Video',
       type: 'file', 
       fieldset: 'inquire',
-      // options removed to prevent conflict
     }),
     defineField({
       name: 'email',

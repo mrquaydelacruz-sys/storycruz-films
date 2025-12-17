@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // 1. ADD THIS LINE TO FIX THE CONSOLE ERROR
+  reactStrictMode: false, 
+
   images: {
     remotePatterns: [
       {
