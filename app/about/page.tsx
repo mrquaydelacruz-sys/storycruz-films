@@ -9,8 +9,14 @@ async function getData() {
     aboutText,
     aboutImage,
     aboutSignature,
+    signatureGif,
     aboutSlideshow,
-    signatureGif // <--- Fetch the GIF
+    
+    // Fetch Christine's new data
+    christineTitle,
+    christineText,
+    christineImage,
+    christineSignature
   }`);
 }
 
@@ -20,10 +26,9 @@ export default async function AboutPage() {
   return (
     <main className="min-h-screen pt-32 pb-20 bg-black">
       
-      {/* 1. TOP SECTION: Bio */}
+      {/* --- SECTION 1: MAIN BIO (QUAY / TOGETHER) --- */}
       <div className="px-6 md:px-12 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-start mb-24">
-        
-        {/* Left Column: Bio Image */}
+        {/* Left: Image */}
         <div className="relative aspect-[3/4] w-full bg-neutral-900 rounded-sm overflow-hidden">
           {data?.aboutImage && (
             <Image 
@@ -35,7 +40,7 @@ export default async function AboutPage() {
           )}
         </div>
 
-        {/* Right Column: Bio Text */}
+        {/* Right: Text */}
         <div className="flex flex-col">
           <h1 className="text-4xl md:text-6xl font-serif text-white mb-8">
             {data?.aboutTitle || "Our Story"}
@@ -44,10 +49,8 @@ export default async function AboutPage() {
             {data?.aboutText}
           </div>
 
-          {/* --- SIGNATURE SECTION (GIF or Animation) --- */}
+          {/* Signature 1 (Gif or Text) */}
           <div className="mt-12 mb-10 min-h-[100px]">
-            
-            {/* OPTION A: If a GIF is uploaded in Sanity, show it */}
             {data?.signatureGif ? (
               <div className="relative w-64 h-32">
                 <Image 
@@ -55,28 +58,60 @@ export default async function AboutPage() {
                   alt="Signature"
                   fill
                   className="object-contain object-left"
-                  unoptimized // Required for GIFs to play
+                  unoptimized
                 />
               </div>
             ) : (
-              /* OPTION B: If no GIF, use the code animation */
               data?.aboutSignature && <SignatureAnimation text={data.aboutSignature} />
             )}
-
           </div>
-          {/* ------------------------------------------- */}
-
         </div>
       </div>
 
-      {/* 2. SLIDESHOW DIVIDER */}
+
+      {/* --- SECTION 2: CHRISTINE'S BIO --- */}
+      {/* Only shows if you upload Christine's photo in Sanity */}
+      {data?.christineImage && (
+        <div className="px-6 md:px-12 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-start mb-24 animate-in fade-in slide-in-from-bottom-10 duration-1000">
+          
+          {/* Left: Christine's Image */}
+          <div className="relative aspect-[3/4] w-full bg-neutral-900 rounded-sm overflow-hidden">
+             <Image 
+                src={urlFor(data.christineImage).url()} 
+                alt="Christine" 
+                fill 
+                className="object-cover"
+              />
+          </div>
+
+          {/* Right: Christine's Text */}
+          <div className="flex flex-col">
+            <h2 className="text-4xl md:text-6xl font-serif text-white mb-8">
+              {data?.christineTitle || "Christine"}
+            </h2>
+            <div className="text-offwhite/80 font-sans leading-relaxed text-lg whitespace-pre-wrap">
+              {data?.christineText}
+            </div>
+
+            {/* Optional: Christine's Signature */}
+            {data?.christineSignature && (
+              <div className="mt-12 mb-10 min-h-[80px]">
+                <SignatureAnimation text={data.christineSignature} />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+
+      {/* --- SLIDESHOW DIVIDER --- */}
       {data?.aboutSlideshow && (
         <div className="w-full mb-24">
           <AboutSlideshow images={data.aboutSlideshow} />
         </div>
       )}
 
-      {/* 3. CTA SECTION */}
+      {/* --- CTA SECTION --- */}
       <section className="px-6 md:px-12 max-w-5xl mx-auto text-center">
         <h2 className="text-3xl md:text-4xl font-serif text-white mb-8">
           Ready to tell your story?

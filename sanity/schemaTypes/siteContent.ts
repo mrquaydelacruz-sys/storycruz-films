@@ -78,6 +78,36 @@ export default defineType({
       of: [{ type: 'image', options: { hotspot: true } }],
     }),
 
+// --- NEW: CHRISTINE'S SECTION ---
+    defineField({
+      name: 'christineTitle',
+      title: "Christine's Title",
+      type: 'string',
+      fieldset: 'about',
+      initialValue: 'Christine'
+    }),
+    defineField({
+      name: 'christineImage',
+      title: "Christine's Photo",
+      type: 'image',
+      fieldset: 'about',
+      options: { hotspot: true }
+    }),
+    defineField({
+      name: 'christineText',
+      title: "Christine's Bio",
+      type: 'text',
+      fieldset: 'about',
+    }),
+    defineField({
+      name: 'christineSignature',
+      title: "Christine's Signature Text",
+      type: 'string',
+      fieldset: 'about',
+      description: 'Optional: Animated signature text for this section.'
+    }),
+    // --------------------------------
+
     // --- INQUIRE PAGE ---
     defineField({
       name: 'inquireTitle',
