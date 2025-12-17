@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef } from 'react'
+// @ts-ignore
 import { Curtains, Plane } from 'curtainsjs'
 
 export default function BackgroundWater() {
