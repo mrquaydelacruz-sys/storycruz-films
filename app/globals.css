@@ -24,3 +24,9 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+body.menu-open main {
+  filter: blur(8px);
+  transition: filter 0.5s ease;
+  pointer-events: none; /* Prevents clicking through the menu */
+}
