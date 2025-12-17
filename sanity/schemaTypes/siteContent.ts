@@ -116,5 +116,13 @@ export default defineType({
   description: 'This will appear in a handwritten font (e.g., "Love, Quay & Christine")',
   initialValue: 'Love, Quay & Christine',
    }),
+   defineField({
+  name: 'inquireVideo',
+  title: 'Inquire Page Hero Video',
+  type: 'file', // 'file' is best for hosting small background videos directly in Sanity
+  options: {
+    accept: 'video/mp4,video/webm', // Limit to video formats
+  },
+}),
   ],
 })
