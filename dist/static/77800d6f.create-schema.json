@@ -1,0 +1,455 @@
+[
+  {
+    "fields": [
+      {
+        "initialValue": "StoryCruz",
+        "name": "heroTitle",
+        "type": "string",
+        "title": "Hero Title (Big Text)"
+      },
+      {
+        "initialValue": "Films & Photography",
+        "name": "heroSubtitle",
+        "type": "string",
+        "title": "Hero Subtitle (Small Text)"
+      },
+      {
+        "options": {
+          "accept": "video/mp4"
+        },
+        "description": "Upload a short, compressed MP4 loop (under 10MB recommended).",
+        "name": "heroVideo",
+        "type": "file",
+        "title": "Background Video (MP4)"
+      },
+      {
+        "initialValue": "Capturing the Unscripted",
+        "name": "introHeading",
+        "type": "string",
+        "title": "Intro Section Heading"
+      },
+      {
+        "initialValue": "We believe in the beauty of the moment.",
+        "name": "introText",
+        "type": "text",
+        "title": "Intro Section Body Text"
+      },
+      {
+        "options": {
+          "hotspot": true
+        },
+        "name": "introLeftImage",
+        "type": "image",
+        "title": "Intro Left (Portrait)"
+      },
+      {
+        "of": [
+          {
+            "type": "image"
+          }
+        ],
+        "name": "introSlideshow",
+        "type": "array",
+        "title": "Intro Center Slideshow"
+      },
+      {
+        "options": {
+          "hotspot": true
+        },
+        "name": "introRightImage",
+        "type": "image",
+        "title": "Intro Right (Large Landscape)"
+      },
+      {
+        "options": {
+          "hotspot": true
+        },
+        "name": "dividerImage",
+        "type": "image",
+        "title": "Full-Width Divider Image"
+      },
+      {
+        "description": "Add 3-5 sweet reviews from past couples.",
+        "of": [
+          {
+            "fields": [
+              {
+                "rows": 4,
+                "name": "quote",
+                "type": "text",
+                "title": "The Words"
+              },
+              {
+                "name": "couple",
+                "type": "string",
+                "title": "Couple Names"
+              },
+              {
+                "name": "location",
+                "type": "string",
+                "title": "Wedding Location (Optional)"
+              }
+            ],
+            "type": "object",
+            "name": "review"
+          }
+        ],
+        "name": "testimonials",
+        "type": "array",
+        "title": "Love Notes (Testimonials)"
+      }
+    ],
+    "name": "homepage",
+    "type": "document",
+    "title": "Homepage Content"
+  },
+  {
+    "fields": [
+      {
+        "options": {
+          "hotspot": true
+        },
+        "description": "Upload a white PNG with transparent background.",
+        "name": "navbarLogo",
+        "type": "image",
+        "title": "Website Logo (Navbar)"
+      },
+      {
+        "initialValue": "About Us",
+        "name": "aboutTitle",
+        "type": "string",
+        "title": "Title",
+        "fieldset": "about"
+      },
+      {
+        "options": {
+          "hotspot": true
+        },
+        "name": "aboutImage",
+        "type": "image",
+        "title": "Bio Photo",
+        "fieldset": "about"
+      },
+      {
+        "initialValue": "We are a husband and wife team...",
+        "name": "aboutText",
+        "type": "text",
+        "title": "Bio Text",
+        "fieldset": "about"
+      },
+      {
+        "initialValue": "Let's Create Something Beautiful",
+        "name": "inquireTitle",
+        "type": "string",
+        "title": "Title",
+        "fieldset": "inquire"
+      },
+      {
+        "name": "inquireText",
+        "type": "text",
+        "title": "Intro Text",
+        "fieldset": "inquire"
+      },
+      {
+        "initialValue": "hello@storycruzfilms.com",
+        "name": "email",
+        "type": "string",
+        "title": "Contact Email",
+        "fieldset": "inquire"
+      },
+      {
+        "initialValue": "High River, Alberta",
+        "name": "location",
+        "type": "string",
+        "fieldset": "inquire"
+      },
+      {
+        "initialValue": "Selected Photography",
+        "name": "photosTitle",
+        "type": "string",
+        "title": "Photos Page Heading",
+        "fieldset": "titles"
+      },
+      {
+        "initialValue": "Cinematic Films",
+        "name": "filmsTitle",
+        "type": "string",
+        "title": "Films Page Heading",
+        "fieldset": "titles"
+      },
+      {
+        "of": [
+          {
+            "fields": [
+              {
+                "description": "e.g. Instagram",
+                "name": "platform",
+                "type": "string",
+                "title": "Platform Name"
+              },
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "uri",
+                        "constraint": {
+                          "options": {
+                            "scheme": [
+                              "/^http$/",
+                              "/^https$/"
+                            ],
+                            "allowRelative": false,
+                            "relativeOnly": false,
+                            "allowCredentials": false
+                          }
+                        }
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "url",
+                "type": "url",
+                "title": "URL"
+              }
+            ],
+            "type": "object"
+          }
+        ],
+        "name": "socialLinks",
+        "type": "array",
+        "title": "Social Media Links",
+        "fieldset": "footer"
+      },
+      {
+        "initialValue": "© 2025 StoryCruz Films",
+        "description": "The text that appears at the very bottom.",
+        "name": "copyrightText",
+        "type": "string",
+        "fieldset": "footer"
+      },
+      {
+        "initialValue": "Love, Quay & Christine",
+        "description": "This will appear in a handwritten font (e.g., \"Love, Quay & Christine\")",
+        "name": "aboutSignature",
+        "type": "string",
+        "title": "About Page Signature"
+      }
+    ],
+    "fieldsets": [
+      {
+        "name": "about",
+        "title": "About Page"
+      },
+      {
+        "name": "inquire",
+        "title": "Inquire Page"
+      },
+      {
+        "name": "titles",
+        "title": "Gallery Page Titles"
+      },
+      {
+        "name": "footer",
+        "title": "Footer Content"
+      }
+    ],
+    "name": "siteContent",
+    "type": "document",
+    "title": "Site Page Content"
+  },
+  {
+    "fields": [
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "title",
+        "type": "string",
+        "title": "Film Title"
+      },
+      {
+        "options": {
+          "source": "title",
+          "maxLength": 96
+        },
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "custom"
+              },
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "Click Generate to create a URL friendly version of the title",
+        "name": "slug",
+        "type": "slug"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "uri",
+                "constraint": {
+                  "options": {
+                    "scheme": [
+                      "/^http$/",
+                      "/^https$/"
+                    ],
+                    "allowRelative": false,
+                    "relativeOnly": false,
+                    "allowCredentials": false
+                  }
+                }
+              },
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "Just paste the full link (e.g. https://www.youtube.com/watch?v=...)",
+        "name": "youtubeUrl",
+        "type": "url",
+        "title": "YouTube URL"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "publishedAt",
+        "type": "date",
+        "title": "Date Published"
+      },
+      {
+        "options": {
+          "hotspot": true
+        },
+        "description": "Leave empty to automatically use the YouTube thumbnail.",
+        "name": "customThumbnail",
+        "type": "image",
+        "title": "Custom Cover Image (Optional)"
+      },
+      {
+        "initialValue": false,
+        "description": "Toggle ON to show this film on the Homepage.",
+        "name": "featured",
+        "type": "boolean",
+        "title": "Featured?"
+      }
+    ],
+    "name": "film",
+    "type": "document",
+    "title": "Films (Portfolio)"
+  },
+  {
+    "fields": [
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "e.g. \"Sarah & Mike - Lake Louise\"",
+        "name": "title",
+        "type": "string",
+        "title": "Album Title"
+      },
+      {
+        "options": {
+          "source": "title",
+          "maxLength": 96
+        },
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "custom"
+              },
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "slug",
+        "type": "slug",
+        "title": "Page Link (Slug)"
+      },
+      {
+        "options": {
+          "hotspot": true
+        },
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "coverImage",
+        "type": "image"
+      },
+      {
+        "description": "Drag and drop your selected photos here.",
+        "of": [
+          {
+            "options": {
+              "hotspot": true
+            },
+            "type": "image"
+          }
+        ],
+        "name": "images",
+        "type": "array",
+        "title": "Gallery Images"
+      },
+      {
+        "name": "date",
+        "type": "date",
+        "title": "Event Date"
+      }
+    ],
+    "name": "photoGallery",
+    "type": "document",
+    "title": "Photo Albums"
+  }
+]

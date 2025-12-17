@@ -61,47 +61,50 @@ export default async function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
-            {/* LEFT IMAGE */}
-            <div className="md:col-span-3">
-              {home?.introLeftImage && (
-                <div className="bg-[#fdfdfd] p-[3px] shadow-lg rotate-[-1.5deg] hover:rotate-0 transition-transform duration-700 aspect-[3/4] relative">
-                  <div className="relative w-full h-full overflow-hidden">
-                    <Image 
-                      src={urlFor(home.introLeftImage).width(600).url()} 
-                      alt="Intro Left"
-                      fill
-                      className="object-cover" 
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
+           {/* LEFT IMAGE */}
+<div className="md:col-span-3">
+  {home?.introLeftImage && (
+    /* Removed rotate-[-1.5deg] and hover:rotate-0 */
+    <div className="bg-[#fdfdfd] p-[3px] shadow-lg aspect-[3/4] relative">
+      <div className="relative w-full h-full overflow-hidden">
+        <Image 
+          src={urlFor(home.introLeftImage).width(600).url()} 
+          alt="Intro Left"
+          fill
+          className="object-cover" 
+        />
+      </div>
+    </div>
+  )}
+</div>
 
-            {/* CENTER SLIDESHOW */}
-            <div className="md:col-span-3">
-              {home?.introSlideshow && home.introSlideshow.length > 0 && (
-                <div className="bg-[#fdfdfd] p-[3px] shadow-lg rotate-[0.5deg] aspect-[3/4] relative z-10">
-                  <div className="relative w-full h-full overflow-hidden">
-                     <IntroSlideshow images={home.introSlideshow} />
-                  </div>
-                </div>
-              )}
-            </div>
+{/* CENTER SLIDESHOW */}
+<div className="md:col-span-3">
+  {home?.introSlideshow && home.introSlideshow.length > 0 && (
+    /* Removed rotate-[0.5deg] */
+    <div className="bg-[#fdfdfd] p-[3px] shadow-lg aspect-[3/4] relative z-10">
+      <div className="relative w-full h-full overflow-hidden">
+         <IntroSlideshow images={home.introSlideshow} />
+      </div>
+    </div>
+  )}
+</div>
 
-            {/* RIGHT IMAGE */}
-            <div className="md:col-span-6">
-              {home?.introRightImage && (
-                <div className="bg-[#fdfdfd] p-[4px] shadow-lg rotate-[1deg] hover:rotate-0 transition-transform duration-700 aspect-video relative">
-                  <div className="relative w-full h-full overflow-hidden">
-                    <Image 
-                      src={urlFor(home.introRightImage).width(1200).url()} 
-                      alt="Feature Landscape"
-                      fill
-                      className="object-cover" 
-                    />
-                  </div>
-                </div>
-              )}
+{/* RIGHT IMAGE */}
+<div className="md:col-span-6">
+  {home?.introRightImage && (
+    /* Removed rotate-[1deg] and hover:rotate-0 */
+    <div className="bg-[#fdfdfd] p-[4px] shadow-lg aspect-video relative">
+      <div className="relative w-full h-full overflow-hidden">
+        <Image 
+          src={urlFor(home.introRightImage).width(1200).url()} 
+          alt="Feature Landscape"
+          fill
+          className="object-cover" 
+        />
+      </div>
+    </div>
+  )}
               
               <div className="mt-8 flex justify-end">
                 <Link href="/about" className="text-[10px] uppercase tracking-[0.2em] text-white/60 border-b border-white/20 pb-1 hover:text-accent hover:border-accent transition-all">
@@ -114,12 +117,12 @@ export default async function Home() {
 
         {/* 3. CINEMATIC DIVIDER */}
         {home?.dividerImage && (
-          <section className="relative w-full h-[40vh] md:h-[80vh] overflow-hidden my-20">
+          <section className="relative w-full h-[40vh] md:h-[40vh] overflow-hidden my-15">
              <Image 
                src={urlFor(home.dividerImage).url()} 
                alt="Cinematic Moment" 
                fill 
-               className="object-cover opacity-60" 
+               className="object-cover opacity-100" 
              />
              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
           </section>

@@ -4,7 +4,8 @@
 **/
 import { defineCliConfig } from 'sanity/cli'
 
-const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID
-const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET
+// Hardcode these values for deployment so the Studio doesn't crash
+const projectId = 'a2hh2h81' 
+const dataset = 'production'
 
 export default defineCliConfig({ api: { projectId, dataset } })
