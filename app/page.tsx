@@ -8,28 +8,35 @@ import IntroSlideshow from "@/components/IntroSlideshow";
 import BackgroundWater from "@/components/BackgroundWater"; // 1. Import the background
 
 async function getData() {
-  const home = await client.fetch(`*[_type == "homepage"][0]{
-    heroTitle,
-    heroSubtitle,
-    "heroVideoUrl": heroVideo.asset->url, 
-    introHeading,
-    introText,
-    introLeftImage,
-    introSlideshow[] { asset->{ url, metadata { dimensions } } },
-    introRightImage,
-    dividerImage,
-    testimonials
-  }`);
+  // Fetch homepage content with 'homepage' tag
+  const home = await client.fetch(
+    `*[_type == "homepage"][0]{
+      heroTitle,
+      heroSubtitle,
+      "heroVideoUrl": heroVideo.asset->url, 
+      introHeading,
+      introText,
+      introLeftImage,
+      introSlideshow[] { asset->{ url, metadata { dimensions } } },
+      introRightImage,
+      dividerImage,
+      testimonials
+    }`,
+    {},
+    { next: { tags: ['homepage'] } } // Added tag
+  );
 
-  // FIX: Ensure this is "const" and not "onst"
-  const featuredFilms = await client.fetch(`
-  *[_type == "film" && featured == true] | order(publishedAt desc)[0...2] {
-    title,
-    slug,
-    youtubeUrl,
-    customThumbnail // Ensure this is just the field name, not re-mapped
-  }
-`);
+  // Fetch featured films with 'film' tag
+  const featuredFilms = await client.fetch(
+    `*[_type == "film" && featured == true] | order(publishedAt desc)[0...2] {
+      title,
+      slug,
+      youtubeUrl,
+      customThumbnail 
+    }`,
+    {},
+    { next: { tags: ['film'] } } // Added tag
+  );
 
   return { home, featuredFilms };
 }

@@ -6,21 +6,22 @@ import HeaderCarousel from "@/components/HeaderCarousel";
 async function getData() {
   // We use Promise.all to fetch both data sources at the same time (faster)
   const [albums, siteData] = await Promise.all([
-    // 1. Get the Albums (Your existing query)
+    // 1. Get the Albums with 'photoGallery' tag
     client.fetch(`
       *[_type == "photoGallery" && defined(slug.current)] | order(date desc) {
         title,
         slug,
         coverImage
       }
-    `),
-    // 2. Get the Slideshow Images (The new query)
+    `, {}, { next: { tags: ['photoGallery'] } }), // Added tag
+    
+    // 2. Get the Slideshow Images with 'siteContent' tag
     client.fetch(`
       *[_type == "siteContent"][0] {
         "slideshow": photoHeaderImages[].asset->url,
         photosTitle 
       }
-    `)
+    `, {}, { next: { tags: ['siteContent'] } }) // Added tag
   ]);
 
   return { albums, siteData };

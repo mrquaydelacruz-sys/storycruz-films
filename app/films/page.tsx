@@ -18,6 +18,7 @@ const getYouTubeThumbnail = (url: string) => {
 };
 
 async function getData() {
+  // Fetch films with the 'film' tag
   const projects = await client.fetch(`
     *[_type == "film" && defined(youtubeUrl) && defined(slug.current)] | order(publishedAt desc) {
       title,
@@ -25,7 +26,17 @@ async function getData() {
       customThumbnail,
       youtubeUrl
     }
-  `);
+  `, {}, { next: { tags: ['film'] } }); // Added tag
+
+  // Fetch settings with the 'siteContent' tag
+  const settings = await client.fetch(
+    `*[_type == "siteContent"][0]{ filmsTitle }`,
+    {},
+    { next: { tags: ['siteContent'] } } // Added tag
+  );
+
+  return { projects, title: settings?.filmsTitle };
+}
 
   const settings = await client.fetch(`*[_type == "siteContent"][0]{ filmsTitle }`);
 
