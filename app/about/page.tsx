@@ -118,7 +118,7 @@ export default async function AboutPage() {
           Ready to tell your story?
         </h2>
         <a 
-          href="https://storycruzfilms.pixieset.com/contact-form/cf_eniioOifaksZ9zgpyOAUktqPicDw" 
+          href="https://www.storycruzfilms.com/inquire" 
           target="_blank" 
           rel="noopener noreferrer"
           className="inline-block bg-white text-black px-12 py-4 uppercase tracking-[0.3em] text-[10px] font-bold hover:bg-accent hover:text-white transition-all duration-500"
