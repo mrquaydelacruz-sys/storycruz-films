@@ -1,5 +1,5 @@
 import { client } from "@/sanity/client";
-import { Check, Star } from "lucide-react";
+import { Check, Star, Clock, Users, Camera, Video } from "lucide-react";
 import FAQSection from "@/components/FAQSection";
 
 export const revalidate = 0;
@@ -114,6 +114,170 @@ export default async function InvestmentPage({ params }: { params: { slug: strin
             </div>
           )}
         </div>
+
+        {/* SEASONAL & INTIMATE COLLECTIONS */}
+        {data.seasonalCollections?.enabled && data.seasonalCollections.tiers?.length > 0 && (
+          <div className="max-w-7xl mx-auto mb-24">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-serif mb-6 flex items-center justify-center gap-4">
+                <span className="h-[1px] w-16 bg-white/20"></span>
+                {data.seasonalCollections.sectionTitle || "Seasonal Collections"}
+                <span className="h-[1px] w-16 bg-white/20"></span>
+              </h2>
+              {data.seasonalCollections.availability && (
+                <p className="text-white/50 text-sm tracking-wide max-w-2xl mx-auto">
+                  {data.seasonalCollections.availability}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-16">
+              {data.seasonalCollections.tiers.map((tier: any, tierIndex: number) => (
+                <div key={tierIndex} className="space-y-8">
+                  {/* Tier Header */}
+                  <div className="text-center">
+                    <div className="inline-flex items-center gap-3 mb-4">
+                      <Clock size={16} className="text-white/40" />
+                      <span className="text-xs tracking-[0.3em] uppercase text-white/40">{tier.duration}</span>
+                    </div>
+                    <h3 className="text-2xl md:text-3xl font-serif text-white mb-3">
+                      {tier.tierName || `Tier ${tier.tierNumber}`}
+                    </h3>
+                    {tier.tagline && (
+                      <p className="text-white/50 text-sm max-w-xl mx-auto">{tier.tagline}</p>
+                    )}
+                  </div>
+
+                  {/* Options Grid */}
+                  {tier.hasMultipleOptions && tier.options?.length > 0 ? (
+                    /* Multiple Options (A/B) */
+                    <div className={`grid grid-cols-1 ${tier.options.length === 2 ? 'lg:grid-cols-2' : tier.options.length >= 3 ? 'lg:grid-cols-3' : ''} gap-6`}>
+                      {tier.options.map((option: any, optIndex: number) => (
+                        <div key={optIndex} className="group relative bg-white/5 backdrop-blur-md p-8 rounded-sm border border-white/5 hover:border-white/20 hover:bg-white/10 transition-all duration-500">
+                          {/* Option Label Badge */}
+                          <div className="absolute -top-3 left-8">
+                            <span className="bg-white/10 backdrop-blur-sm px-4 py-1 text-xs tracking-[0.2em] uppercase text-white/70 border border-white/10">
+                              {option.optionLabel}
+                            </span>
+                          </div>
+
+                          <div className="pt-4">
+                            <h4 className="text-xl font-serif text-white mb-2">{option.optionName}</h4>
+                            <p className="text-2xl font-light text-white/90 mb-6">{option.price}</p>
+
+                            {/* Coverage & Team */}
+                            <div className="space-y-3 mb-6 pb-6 border-b border-white/10">
+                              {option.coverage && (
+                                <div className="flex items-center gap-3 text-sm text-white/60">
+                                  <Clock size={14} className="text-white/40" />
+                                  <span>{option.coverage}</span>
+                                </div>
+                              )}
+                              {option.team && (
+                                <div className="flex items-center gap-3 text-sm text-white/60">
+                                  <Users size={14} className="text-white/40" />
+                                  <span>{option.team}</span>
+                                </div>
+                              )}
+                              {option.guestCap && (
+                                <div className="flex items-center gap-3 text-sm text-white/60">
+                                  <Users size={14} className="text-white/40" />
+                                  <span>{option.guestCap}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Media Choice */}
+                            {option.mediaChoice && (
+                              <div className="mb-6 p-4 bg-white/5 rounded-sm border-l-2 border-white/20">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Camera size={14} className="text-white/50" />
+                                  <span className="text-xs tracking-wide uppercase text-white/50">Choose Your Medium</span>
+                                  <Video size={14} className="text-white/50" />
+                                </div>
+                                <p className="text-sm text-white/70">{option.mediaChoice}</p>
+                              </div>
+                            )}
+
+                            {/* Deliverables */}
+                            {option.deliverables?.length > 0 && (
+                              <ul className="space-y-3 mb-6">
+                                {option.deliverables.map((item: string, i: number) => (
+                                  <li key={i} className="flex gap-3 text-sm text-white/70 group-hover:text-white transition-colors">
+                                    <Check size={14} className="text-white/40 mt-0.5 shrink-0" />
+                                    <span>{item}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+
+                            {/* Why It Works */}
+                            {option.whyItWorks && (
+                              <p className="text-xs text-white/40 italic border-t border-white/10 pt-4">
+                                {option.whyItWorks}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    /* Single Option Tier */
+                    <div className="max-w-2xl mx-auto">
+                      <div className="group relative bg-white/5 backdrop-blur-md p-10 rounded-sm border border-white/5 hover:border-white/20 hover:bg-white/10 transition-all duration-500">
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-baseline mb-6 gap-2">
+                          <h4 className="text-xl font-serif text-white">{tier.tierName}</h4>
+                          <span className="text-2xl font-light text-white/90">{tier.singlePrice}</span>
+                        </div>
+
+                        {/* Coverage & Team */}
+                        <div className="space-y-3 mb-6 pb-6 border-b border-white/10">
+                          {tier.singleCoverage && (
+                            <div className="flex items-center gap-3 text-sm text-white/60">
+                              <Clock size={14} className="text-white/40" />
+                              <span>{tier.singleCoverage}</span>
+                            </div>
+                          )}
+                          {tier.singleTeam && (
+                            <div className="flex items-center gap-3 text-sm text-white/60">
+                              <Users size={14} className="text-white/40" />
+                              <span>{tier.singleTeam}</span>
+                            </div>
+                          )}
+                          {tier.singleGuestCap && (
+                            <div className="flex items-center gap-3 text-sm text-white/60">
+                              <Users size={14} className="text-white/40" />
+                              <span>{tier.singleGuestCap}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Deliverables */}
+                        {tier.singleDeliverables?.length > 0 && (
+                          <ul className="space-y-4 mb-6">
+                            {tier.singleDeliverables.map((item: string, i: number) => (
+                              <li key={i} className="flex gap-4 text-sm text-white/70 group-hover:text-white transition-colors">
+                                <Check size={16} className="text-white/40 mt-0.5 shrink-0" />
+                                <span>{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+
+                        {/* Best For */}
+                        {tier.singleBestFor && (
+                          <p className="text-sm text-white/50 italic border-l-2 border-white/10 pl-4">
+                            {tier.singleBestFor}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* --- FAQ SECTION PLACED HERE --- */}
         <FAQSection faqs={data.faqs} />
