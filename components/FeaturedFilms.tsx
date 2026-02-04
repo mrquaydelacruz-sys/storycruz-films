@@ -42,8 +42,16 @@ const titleReveal = {
   },
 };
 
-export default function FeaturedFilms({ films }: { films: any[] }) {
+export default function FeaturedFilms({
+  films,
+  scrollDrivenProgress,
+}: {
+  films: any[];
+  scrollDrivenProgress?: number;
+}) {
   const [playingFilm, setPlayingFilm] = useState<string | null>(null);
+  const isScrollDriven = scrollDrivenProgress !== undefined;
+  const shouldReveal = isScrollDriven ? scrollDrivenProgress > 0.12 : undefined;
 
   if (!films || films.length === 0) return null;
 
@@ -51,8 +59,9 @@ export default function FeaturedFilms({ films }: { films: any[] }) {
     <motion.section
       className="relative z-10 py-24 px-6 md:px-12 max-w-7xl mx-auto"
       initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, amount: 0.55, margin: '80px 0px 0px 0px' }}
+      animate={isScrollDriven ? (shouldReveal ? 'visible' : 'hidden') : undefined}
+      whileInView={isScrollDriven ? undefined : 'visible'}
+      viewport={isScrollDriven ? undefined : { once: true, amount: 0.55, margin: '80px 0px 0px 0px' }}
       variants={container}
     >
       <motion.div
@@ -124,8 +133,9 @@ export default function FeaturedFilms({ films }: { films: any[] }) {
       <motion.div
         className="flex justify-center mt-16"
         initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.3 }}
+        animate={isScrollDriven ? (shouldReveal ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }) : undefined}
+        whileInView={isScrollDriven ? undefined : { opacity: 1, y: 0 }}
+        viewport={isScrollDriven ? undefined : { once: true, amount: 0.3 }}
         transition={{ type: 'spring', stiffness: 200, damping: 24, delay: 0.2 }}
       >
         <Link

@@ -108,24 +108,41 @@ export default function ContactSection() {
               </motion.div>
             </div>
 
-            {/* CTA Button */}
+            {/* CTA Button — gentle heartbeat pulse + subtle glow */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.6 }}
-              className="pt-8"
+              className="pt-8 flex flex-col items-center"
             >
-              <Link
-                href="/inquire"
-                className="group inline-flex items-center gap-3 px-8 py-4 bg-accent hover:bg-accent/90 text-white font-semibold uppercase tracking-wider text-sm rounded-full transition-all duration-300 shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 hover:scale-105"
+              <motion.div
+                className="relative inline-block"
+                animate={{
+                  scale: [1, 1.02, 1, 1.02, 1],
+                  boxShadow: [
+                    '0 0 20px rgba(212, 175, 55, 0.25)',
+                    '0 0 32px rgba(212, 175, 55, 0.4)',
+                    '0 0 20px rgba(212, 175, 55, 0.25)',
+                  ],
+                }}
+                transition={{
+                  duration: 1.4,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
               >
-                Connect With Us
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-              </Link>
+                <Link
+                  href="/inquire"
+                  className="group inline-flex items-center gap-3 px-8 py-4 bg-accent hover:bg-accent/90 text-white font-semibold uppercase tracking-wider text-sm rounded-full transition-colors duration-300"
+                >
+                  Connect With Us
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+                </Link>
+              </motion.div>
 
-              <p className="text-xs text-neutral-600 mt-4 uppercase tracking-widest">
-                Let's start planning your perfect day
+              <p className="text-xs text-neutral-500 mt-4 uppercase tracking-widest">
+                Let&apos;s start planning your perfect day
               </p>
             </motion.div>
           </div>

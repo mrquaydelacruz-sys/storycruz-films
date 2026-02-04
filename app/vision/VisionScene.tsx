@@ -1,11 +1,32 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Environment, useVideoTexture, ScrollControls, useScroll, Scroll, useTexture, Float, Sparkles, Image, Html } from "@react-three/drei";
-import { Suspense, useRef, useState, useMemo } from "react";
+import { Environment, useVideoTexture, ScrollControls, useScroll, useTexture, Float, Sparkles, Image as DreiImage, Html } from "@react-three/drei";
+import { createRoot } from "react-dom/client";
+import { Suspense, useRef, useState, useEffect, createContext, useContext } from "react";
 import * as THREE from 'three';
 import { urlFor } from "@/sanity/client";
-import { motion } from "framer-motion";
+import FeaturedFilms from "@/components/FeaturedFilms";
+import ContactSection from "@/components/ContactSection";
+import Image from "next/image";
+
+// Scroll state for the overlay (avoids using Scroll html, which can call createRoot twice).
+export type ScrollStateRef = React.MutableRefObject<{ offset: number; height: number; pages: number }>;
+const ScrollStateContext = createContext<ScrollStateRef | null>(null);
+
+function ScrollStateWriter({ children }: { children: React.ReactNode }) {
+    const scroll = useScroll();
+    const stateRef = useContext(ScrollStateContext);
+    const { size } = useThree((s) => ({ size: s.size }));
+    useFrame(() => {
+        if (stateRef?.current) {
+            stateRef.current.offset = scroll.offset;
+            stateRef.current.height = size.height;
+            stateRef.current.pages = 5;
+        }
+    });
+    return <>{children}</>;
+}
 
 // --- TYPES ---
 export type VisionData = {
@@ -14,12 +35,15 @@ export type VisionData = {
     introCenterUrl: string;
     introSlideshowUrls?: string[];
     introRightUrl: string;
+    dividerImageUrl?: string | null;
     testimonials?: {
         quote: string;
         couple: string;
         location?: string;
     }[];
     featuredVideos: {
+        title: string;
+        slug?: { current: string };
         thumbnailUrl: string;
         videoUrl: string;
     }[];
@@ -29,8 +53,23 @@ export type VisionData = {
 
 function BackgroundVideo({ url, opacity }: { url: string, opacity: number }) {
     const texture = useVideoTexture(url);
+    const { width, height } = useThree((state) => state.viewport.getCurrentViewport(state.camera, [0, 0, -2]));
+
+    // Calculate "cover" scale (like CSS background-size: cover)
+    const videoAspect = 16 / 9;
+    const viewportAspect = width / height;
+
+    let scale: [number, number, number];
+    if (viewportAspect > videoAspect) {
+        // Viewport is wider than video: constrain by width
+        scale = [width, width / videoAspect, 1];
+    } else {
+        // Viewport is taller than video: constrain by height
+        scale = [height * videoAspect, height, 1];
+    }
+
     return (
-        <mesh position={[0, 0, -1]} scale={[10, 5.625, 1]}>
+        <mesh position={[0, 0, -2]} scale={scale}>
             <planeGeometry />
             <meshBasicMaterial
                 map={texture}
@@ -42,11 +81,40 @@ function BackgroundVideo({ url, opacity }: { url: string, opacity: number }) {
     );
 }
 
+function Divider3D({ url, opacity, scrollOffset }: { url: string, opacity: number, scrollOffset: number }) {
+    const meshRef = useRef<THREE.Group>(null);
+    useFrame(() => {
+        if (meshRef.current) {
+            // Parallax: Moves up 
+            // Active around offset 0.15 - 0.25 (See MainSequence)
+            // We want it to slide through the view.
+            // Center of view is Y=0.
+            // When Offset = 0.2 (center of divider phase), Y should be 0.
+            const relativeY = (scrollOffset - 0.2) * 10;
+            meshRef.current.position.y = relativeY;
+        }
+    });
+
+    if (!url) return null;
+
+    return (
+        <group ref={meshRef} visible={opacity > 0} position={[0, -5, -1]}>
+            <DreiImage
+                url={url}
+                scale={[12, 6]}
+                transparent
+                opacity={opacity}
+                color="#888"
+            />
+        </group>
+    );
+}
+
 function LogoHero({ opacity, scrollOffset }: { opacity: number, scrollOffset: number }) {
     const texture = useTexture("/logo.png");
     const meshRef = useRef<THREE.Mesh>(null);
 
-    useFrame((state, delta) => {
+    useFrame((state) => {
         if (meshRef.current) {
             const targetRotation = scrollOffset * Math.PI * 4;
             meshRef.current.rotation.y = THREE.MathUtils.lerp(meshRef.current.rotation.y, targetRotation, 0.1);
@@ -77,12 +145,9 @@ interface BorderedImageProps {
     scale: [number, number];
     opacity: number;
     radius?: number;
-    onClick?: () => void;
-    onPointerOver?: () => void;
-    onPointerOut?: () => void;
 }
 
-function BorderedImage({ url, position, scale, opacity, radius = 0, onClick, onPointerOver, onPointerOut }: BorderedImageProps) {
+function BorderedImage({ url, position, scale, opacity, radius = 0 }: BorderedImageProps) {
     const borderSize = 0.04;
     return (
         <group position={position}>
@@ -90,15 +155,12 @@ function BorderedImage({ url, position, scale, opacity, radius = 0, onClick, onP
                 <planeGeometry args={[scale[0] + borderSize, scale[1] + borderSize]} />
                 <meshBasicMaterial color="white" transparent opacity={opacity} />
             </mesh>
-            <Image
+            <DreiImage
                 url={url}
                 scale={scale}
                 transparent
                 opacity={opacity}
                 radius={radius}
-                onClick={onClick}
-                onPointerOver={onPointerOver}
-                onPointerOut={onPointerOut}
             />
         </group>
     );
@@ -106,13 +168,10 @@ function BorderedImage({ url, position, scale, opacity, radius = 0, onClick, onP
 
 function PhotoCarousel({ urls, opacity, scrollOffset }: { urls: string[], opacity: number, scrollOffset: number }) {
     const groupRef = useRef<THREE.Group>(null);
-
     useFrame(() => {
         if (groupRef.current) {
-            // Move left as we scroll down
-            // scrollOffset moves from ~0.25 to 0.55 during this phase
-            // Map 0.25 -> 0, 0.55 -> -3 (approx)
-            const targetX = (scrollOffset - 0.25) * -8;
+            // Active around 0.1 - 0.15
+            const targetX = (scrollOffset - 0.1) * -20;
             groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, targetX, 0.1);
         }
     });
@@ -120,13 +179,13 @@ function PhotoCarousel({ urls, opacity, scrollOffset }: { urls: string[], opacit
     if (!urls || urls.length === 0) return null;
 
     return (
-        <group ref={groupRef} position={[0, 0, 0]}>
+        <group ref={groupRef} position={[3, 0, 0]}>
             {urls.map((url, i) => (
                 <BorderedImage
                     key={i}
                     url={url}
                     scale={[0.85, 1.2]}
-                    position={[-0.3 + (i * 1.2), 0, 0]} // Space them out horizontally
+                    position={[i * 1.5, 0, 0]}
                     opacity={opacity}
                 />
             ))}
@@ -134,483 +193,339 @@ function PhotoCarousel({ urls, opacity, scrollOffset }: { urls: string[], opacit
     );
 }
 
-function ParallaxGroup({ children, speed = -5, scrollOffset, basePosition }: { children: React.ReactNode, speed?: number, scrollOffset: number, basePosition: [number, number, number] }) {
-    const groupRef = useRef<THREE.Group>(null);
-    useFrame(() => {
-        if (groupRef.current) {
-            // Only move if we are in the "active" phase (scrollOffset > 0.25)
-            if (scrollOffset > 0.25) {
-                const moveX = (scrollOffset - 0.25) * speed;
-                groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, basePosition[0] + moveX, 0.1);
-            } else {
-                // Reset to base
-                groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, basePosition[0], 0.1);
-            }
-        }
-    });
-    return <group ref={groupRef} position={basePosition}>{children}</group>;
-}
-
 function PhotoGrid({ opacity, data, scrollOffset }: { opacity: number, data: VisionData, scrollOffset: number }) {
-    // If we have a slideshow array, use it. Otherwise fallback to the single center image.
     const slideshow = (data.introSlideshowUrls && data.introSlideshowUrls.length > 0)
         ? data.introSlideshowUrls
         : [data.introCenterUrl];
 
     return (
-        <group visible={opacity > 0}>
-            {opacity > 0 && (
-                <group position={[0, -0.2, 0]}>
-                    {/* Left Image (Moves left to exit) */}
-                    {data.introLeftUrl && (
-                        <ParallaxGroup
-                            basePosition={[-1.3, 0, 0]}
-                            scrollOffset={scrollOffset}
-                            speed={-12} // Move left faster than carousel (-8) to avoid overlap
-                        >
-                            <BorderedImage
-                                url={data.introLeftUrl}
-                                scale={[0.85, 1.2]}
-                                position={[0, 0, 0]} // Relative to group
-                                opacity={opacity}
-                            />
-                        </ParallaxGroup>
-                    )}
+        <group visible={opacity > 0} position={[0, -0.2, 0]}>
+            {/* Left Image */}
+            {data.introLeftUrl && (
+                <group position={[-3 + (scrollOffset * 4), 0, 0]}>
+                    <BorderedImage
+                        url={data.introLeftUrl}
+                        scale={[0.85, 1.2]}
+                        position={[-1.5, 0, 0]}
+                        opacity={opacity}
+                    />
+                </group>
+            )}
 
-                    {/* Center Carousel */}
-                    <PhotoCarousel urls={slideshow} opacity={opacity} scrollOffset={scrollOffset} />
+            {/* Slideshow */}
+            <PhotoCarousel urls={slideshow} opacity={opacity} scrollOffset={scrollOffset} />
 
-                    {/* Right Image (Static/Parallax - pushed further right maybe?) */}
-                    {data.introRightUrl && (
-                        <BorderedImage
-                            url={data.introRightUrl}
-                            scale={[1.5, 1.0]}
-                            position={[1.5 + (slideshow.length * 0.5), 0, 0]} // Push right based on carousel? Actually let's keep it fixed or maybe hide it?
-                            // User asked for "center slideshow". Let's assume the carousel REPLACES the center slot.
-                            // But usually a carousel takes up horizontal space.
-                            // Let's just render the right image at a fixed position for now, 
-                            // though it might overlap with the carousel if the carousel is long.
-                            // Better yet: Let's remove the "static" right image if we are doing a full carousel flow, 
-                            // OR let the carousel pass BEHIND the left/right "frame" images?
-                            // User said: "lets have the photos do a auto carousel ... lets use the photos upload through sanity for center slideshow"
-                            // So likely the Center Slot becomes a window.
-
-                            // Implementation choice: Just render the carousel. 
-                            // To keep it simple and clean: I will just render the Left and Right images as "anchors" 
-                            // and the carousel moving in the middle? 
-                            // Or maybe the carousel IS the main feature.
-
-                            // Let's stick to the request: "Center slideshow". 
-                            // I'll render the carousel starting at the center position.
-                            opacity={opacity}
-                        />
-                    )}
+            {/* Right Image */}
+            {data.introRightUrl && (
+                <group position={[3 - (scrollOffset * 4), 0, 0]}>
+                    <BorderedImage
+                        url={data.introRightUrl}
+                        scale={[1.5, 1.0]}
+                        position={[1.5 + (slideshow.length * 0.1), 0, 0]}
+                        opacity={opacity}
+                    />
                 </group>
             )}
         </group>
     );
 }
 
-// Merged HTML Content Component
-// Navbar Controller Component
-function NavbarController() {
-    const scroll = useScroll();
-    const lastScroll = useRef(0);
-    const lastDirection = useRef(0); // 1 = down, -1 = up
-
-    useFrame(() => {
-        // Use scroll.offset (0 to 1)
-        const offset = scroll.offset;
-
-        // Manual delta calculation is often more reliable than scroll.delta in frame loops
-        const delta = offset - lastScroll.current;
-        const threshold = 0.0001; // Lower sensitivity to catch slow scrolls
-
-        // Only trigger if we moved enough
-        if (Math.abs(delta) > threshold) {
-            const direction = delta > 0 ? 1 : -1;
-
-            // If direction changed
-            if (direction !== lastDirection.current) {
-                // Logic: 
-                // - Visible if at top (< 0.01)
-                // - Visible if scrolling UP (direction -1)
-                // - Hidden if scrolling DOWN (direction 1)
-
-                const isAtTop = offset < 0.01;
-                const shouldBeVisible = isAtTop || direction === -1;
-
-                console.log(`[VisionScene] Scroll Toggle: ${shouldBeVisible ? 'SHOW' : 'HIDE'} (Offset: ${offset.toFixed(4)}, Dir: ${direction})`);
-
-                window.dispatchEvent(new CustomEvent('storycruz-toggle-nav', {
-                    detail: { visible: shouldBeVisible }
-                }));
-
-                lastDirection.current = direction;
-            }
-        }
-
-        // Force show if at very top (safer check)
-        if (offset < 0.01 && lastDirection.current !== -1) {
-            window.dispatchEvent(new CustomEvent('storycruz-toggle-nav', {
-                detail: { visible: true }
-            }));
-            lastDirection.current = -1;
-        }
-
-        lastScroll.current = offset;
-    });
-
-    return null;
-}
-
-function VisionPages({ data }: { data: VisionData }) {
-    const scroll = useScroll();
-
-    // Refs for text containers
-    const page1Ref = useRef<HTMLDivElement>(null);
-    const page2Ref = useRef<HTMLDivElement>(null);
-    const page3Ref = useRef<HTMLDivElement>(null);
-    const testimonialsRefs = useRef<(HTMLDivElement | null)[]>([]);
-    const ctaRef = useRef<HTMLDivElement>(null);
-
-    useFrame(() => {
-        const off = scroll.offset;
-
-        // --- Calculation Helper ---
-        // peak: where opacity is 1
-        // width: how wide the "1" range is
-        // fade: how wide the fade in/out ramps are
-        const getOpacity = (peak: number, width: number, fade: number) => {
-            // Range logic:
-            // 0 -> start of fade in (peak - width/2 - fade)
-            // 1 -> peak start (peak - width/2)
-            // 1 -> peak end (peak + width/2)
-            // 0 -> end of fade out (peak + width/2 + fade)
-
-            const startFadeIn = peak - width / 2 - fade;
-            const endFadeIn = peak - width / 2;
-            const startFadeOut = peak + width / 2;
-            const endFadeOut = peak + width / 2 + fade;
-
-            if (off < startFadeIn) return 0;
-            if (off >= startFadeIn && off < endFadeIn) return (off - startFadeIn) / fade;
-            if (off >= endFadeIn && off <= startFadeOut) return 1;
-            if (off > startFadeOut && off < endFadeOut) return 1 - (off - startFadeOut) / fade;
-            return 0;
-        };
-
-        const getYiTranslate = (peak: number, width: number, fade: number) => {
-            // Simple parallax/slide effect: Slide UP as we scroll down
-            // At startFadeIn: +50px
-            // At endFadeIn: 0px
-            // At startFadeOut: 0px
-            // At endFadeOut: -50px
-            const startFadeIn = peak - width / 2 - fade;
-            const endFadeIn = peak - width / 2;
-            const startFadeOut = peak + width / 2;
-            const endFadeOut = peak + width / 2 + fade;
-
-            if (off < startFadeIn) return 50;
-            if (off >= startFadeIn && off < endFadeIn) {
-                // Lerp 50 -> 0
-                return THREE.MathUtils.lerp(50, 0, (off - startFadeIn) / fade);
-            }
-            if (off >= endFadeIn && off <= startFadeOut) return 0;
-            if (off > startFadeOut && off < endFadeOut) {
-                // Lerp 0 -> -50
-                return THREE.MathUtils.lerp(0, -50, (off - startFadeOut) / fade);
-            }
-            return -50;
-        }
-
-        // --- Apply to Refs ---
-
-        // Page 1: 0 - 0.2
-        const p1Op = off < 0.1 ? 1 : THREE.MathUtils.lerp(1, 0, (off - 0.1) / 0.1);
-
-        if (page1Ref.current) {
-            page1Ref.current.style.opacity = Math.max(0, p1Op).toString();
-            page1Ref.current.style.transform = `translateY(${off * 100}px)`; // Parallax down a bit
-        }
-
-        // Page 2 (Capturing): 0.25 - 0.55 range from MainSequence for photos
-        // Let's Center text at 0.35. Width 0.1 (0.3-0.4). Fade 0.1 (0.2-0.3, 0.4-0.5).
-        if (page2Ref.current) {
-            const op = getOpacity(0.35, 0.1, 0.1);
-            const y = getYiTranslate(0.35, 0.1, 0.1);
-            page2Ref.current.style.opacity = op.toString();
-            page2Ref.current.style.transform = `translateY(${y}px)`;
-        }
-
-        // Page 3 (Ready): 0.55 - 0.8 range from MainSequence
-        // Center at 0.65. Width 0.1 (0.6-0.7). Fade 0.1 (0.5-0.6, 0.7-0.8).
-        const p3Op = getOpacity(0.65, 0.1, 0.1);
-        const p3Y = getYiTranslate(0.65, 0.1, 0.1);
-
-        if (page3Ref.current) {
-            page3Ref.current.style.opacity = p3Op.toString();
-            page3Ref.current.style.transform = `translateY(${p3Y}px)`;
-
-            // Typewriter Effect
-            const fullText = "Ready to tell your story?";
-            const startType = 0.5;
-            const endType = 0.7;
-
-            let typeProgress = 0;
-            if (off > startType && off < endType) {
-                typeProgress = (off - startType) / (endType - startType);
-            } else if (off >= endType) {
-                typeProgress = 1;
-            }
-
-            const charCount = Math.floor(fullText.length * typeProgress);
-            const currentText = fullText.substring(0, charCount);
-
-            const h2 = page3Ref.current.querySelector('h2');
-            if (h2 && h2.innerText !== currentText) {
-                h2.innerText = currentText;
-            }
-        }
-
-        // Testimonials Sequential Fade: 0.55 - 0.95 (Extended for longer reading time)
-        if (data.testimonials && data.testimonials.length > 0) {
-            // Define the total scroll range for the sequence
-            const tStart = 0.55;
-            const tEnd = 0.95;
-            const tTotal = tEnd - tStart;
-
-            const count = data.testimonials.length;
-            const itemDuration = tTotal / count;
-
-            data.testimonials.forEach((_, i) => {
-                const itemRef = testimonialsRefs.current[i];
-                if (itemRef) {
-                    // Calculate start and end points for this specific item's "slot"
-                    const start = tStart + (i * itemDuration);
-                    const end = start + itemDuration;
-
-                    // Fade duration (Reduced to 15% for faster fade in, longer hold)
-                    const fade = itemDuration * 0.15;
-                    let op = 0;
-
-                    if (off >= start && off < end) {
-                        if (off < start + fade) {
-                            // Fading In
-                            op = (off - start) / fade;
-                        } else if (off > end - fade) {
-                            // Fading Out
-                            op = 1 - (off - (end - fade)) / fade;
-                        } else {
-                            // Fully Visible (Hold)
-                            op = 1;
-                        }
-                    }
-
-                    itemRef.style.opacity = op.toString();
-
-                    // Subtle Slide Up Effect
-                    // Slide from 20px down to -20px up as it progresses through its slot
-                    const y = THREE.MathUtils.lerp(20, -20, (off - start) / itemDuration);
-                    itemRef.style.transform = `translateY(${y}px)`;
-                }
-            });
-        }
-
-        // CTA: > 0.8
-        if (ctaRef.current) {
-            let op = 0;
-            if (off > 0.75 && off < 0.9) op = (off - 0.75) / 0.15;
-            if (off >= 0.9) op = 1;
-
-            const y = THREE.MathUtils.lerp(50, 0, Math.min(1, Math.max(0, (off - 0.75) / 0.15)));
-
-            ctaRef.current.style.opacity = op.toString();
-            ctaRef.current.style.transform = `translateY(${y}px)`;
-            ctaRef.current.style.pointerEvents = op > 0.5 ? 'auto' : 'none';
-        }
-    });
-
-    return (
-        <Scroll html style={{ width: '100%' }}>
-            {/* Global Styles */}
-            <style>{`
-                ::-webkit-scrollbar {
-                    width: 7px;
-                    background: #000; 
-                }
-                ::-webkit-scrollbar-track {
-                    background: #050505; 
-                }
-                ::-webkit-scrollbar-thumb {
-                    background: #333; 
-                    border-radius: 4px;
-                }
-                ::-webkit-scrollbar-thumb:hover {
-                    background: #555; 
-                }
-            `}</style>
-
-            <div className="w-full text-white font-serif pointer-events-none">
-                {/* Page 1 - Simple Bounce */}
-                <div className="h-screen w-full flex flex-col justify-end items-center pb-32">
-                    <div
-                        ref={page1Ref}
-                        className="animate-bounce text-white/50 text-sm tracking-widest uppercase"
-                    >
-                        Scroll to Explore
-                    </div>
-                </div>
-
-                {/* Page 2 - Capturing the Unscripted */}
-                <div className="h-screen w-full flex flex-col items-center justify-start pt-20">
-                    <div
-                        ref={page2Ref}
-                        className="flex flex-col items-center opacity-0" // Start invisible
-                    >
-                        <h2 className="text-5xl md:text-6xl font-normal mb-2 text-center">
-                            Capturing the Unscripted
-                        </h2>
-                        <p className="text-sm md:text-base tracking-widest uppercase opacity-70 mb-20">
-                            Cinematic Details That Make Your Story Truly Yours
-                        </p>
-                    </div>
-                </div>
-
-                {/* Page 3 - Ready to tell your story */}
-                <div className="h-screen w-full flex flex-col items-center justify-center relative">
-                    {/* Text Container */}
-                    <div
-                        ref={page3Ref}
-                        className="flex flex-col items-center opacity-0 z-10"
-                    >
-                        <h2 className="text-5xl md:text-7xl font-normal text-center drop-shadow-2xl h-[1.2em] mb-12">
-                            {/* Inner text updated by useFrame */}
-                        </h2>
-                    </div>
-
-                    {/* Testimonials Container - Stacked Centered */}
-                    <div
-                        className="absolute bottom-[20%] w-full flex justify-center items-center pointer-events-none px-4"
-                    >
-                        <div className="relative w-full max-w-3xl flex justify-center items-center h-[200px]">
-                            {/* We give the container some height (h-[200px]) to reserve space, 
-                                but the items themselves are centered absolutely within it. 
-                                Actually, 'absolute inset-0' was the issue. 
-                                Let's center them using transforms so they can grow. 
-                            */}
-                            {data.testimonials?.map((t, i) => (
-                                <div
-                                    key={i}
-                                    ref={(el) => { testimonialsRefs.current[i] = el; }}
-                                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full flex flex-col items-center text-center bg-black/40 backdrop-blur-md p-6 md:p-8 rounded-lg border border-white/10 shadow-2xl"
-                                    style={{ opacity: 0, width: '90%', maxWidth: '600px' }} // Start invisible
-                                >
-                                    <p className="text-xl md:text-2xl italic mb-6 font-light leading-relaxed drop-shadow-md">
-                                        "{t.quote}"
-                                    </p>
-                                    <div className="flex flex-col items-center gap-1">
-                                        <p className="text-sm uppercase tracking-[0.2em] font-bold opacity-90">— {t.couple}</p>
-                                        {t.location && <p className="text-xs tracking-widest opacity-60 font-light">{t.location}</p>}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Page 4 - CTA */}
-                <div className="h-screen w-full flex flex-col items-center justify-center relative z-50">
-                    <div
-                        ref={ctaRef}
-                        className="opacity-0"
-                    >
-                        <button
-                            className="pointer-events-auto px-12 py-4 border border-white/30 bg-black/50 backdrop-blur-sm hover:bg-white hover:text-black transition-all duration-500 uppercase tracking-widest text-sm"
-                        >
-                            Inquire Now
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </Scroll>
-    );
-}
-
+// --- 3D SCENE COMPOSITOR ---
 function MainSequence({ data }: { data: VisionData }) {
     const scroll = useScroll();
     const [scrollState, setScrollState] = useState({ offset: 0 });
-    const [opacities, setOpacities] = useState({ logo: 1, photos: 0, bg: 0, cta: 0 });
+    const [opacities, setOpacities] = useState({
+        logo: 1,
+        photos: 0,
+        bg: 0.6,
+        divider: 0
+    });
 
     useFrame(() => {
         const off = scroll.offset;
         setScrollState({ offset: off });
 
-        // 1. Logo Intro (0 - 0.2)
-        const logoOp = 1 - scroll.range(0, 0.2);
+        // Total Pages: 5 (0.2 per page unit approximately)
 
-        // 2. Photo Grid (0.25 - 0.5)
-        // BG Opacity should be dim here (~0.2)
-        let photoOp = 0;
-        if (off > 0.2 && off < 0.3) photoOp = (off - 0.2) / 0.1;
-        if (off >= 0.3 && off <= 0.45) photoOp = 1;
-        if (off > 0.45 && off < 0.55) photoOp = 1 - (off - 0.45) / 0.1;
+        // 1. Logo (0 - 0.05)
+        const logoOp = 1 - scroll.range(0, 0.05);
 
-        // 3. Full Hero Video "Ready to tell your story" (0.55 - 0.8)
-        let globalBgOp = 0;
-        // Phase A: Dim for Grid
-        if (off > 0.1 && off <= 0.5) globalBgOp = THREE.MathUtils.lerp(0, 0.2, (off - 0.1) / 0.1);
-        if (off > 0.25 && off <= 0.5) globalBgOp = 0.2;
-        // Phase B: Full for Text
-        if (off > 0.5 && off <= 0.6) globalBgOp = THREE.MathUtils.lerp(0.2, 1.0, (off - 0.5) / 0.1);
-        if (off > 0.6 && off <= 0.75) globalBgOp = 1.0;
-        // Phase C: Fade out for CTA
-        if (off > 0.8) globalBgOp = THREE.MathUtils.lerp(1.0, 0.1, (off - 0.8) / 0.15);
+        // 2. Photos (0.05 - 0.15)
+        const photoOp = scroll.curve(0.05, 0.15);
 
-        // 4. CTA (0.8 - 1.0)
-        let ctaOp = 0;
-        if (off > 0.8) ctaOp = (off - 0.8) / 0.1;
+        // 3. Divider (0.15 - 0.25)
+        let divOp = 0;
+        if (off > 0.15 && off < 0.25) {
+            // simple bell curve
+            divOp = Math.sin(((off - 0.15) / 0.1) * Math.PI);
+        }
+
+        // 4. Background Video Global
+        // Start clear (0.6), dim down to 0.15 when leaving top area to let content pop
+        let bgOp = 0.6;
+        if (off > 0.05) {
+            // Lerp down to 0.15 quickly as we leave the hero
+            const fade = Math.min((off - 0.05) * 8, 1);
+            bgOp = THREE.MathUtils.lerp(0.6, 0.15, fade);
+        }
 
         setOpacities({
             logo: logoOp,
             photos: photoOp,
-            bg: globalBgOp,
-            cta: ctaOp
+            bg: bgOp,
+            divider: divOp
         });
     });
 
     return (
         <>
             <BackgroundVideo url={data.heroVideoUrl || "/hero-video.mp4"} opacity={opacities.bg} />
-            <LogoHero opacity={Math.max(opacities.logo, opacities.cta)} scrollOffset={scrollState.offset} />
+            <LogoHero opacity={opacities.logo} scrollOffset={scrollState.offset} />
             <PhotoGrid opacity={opacities.photos} data={data} scrollOffset={scrollState.offset} />
-            <Sparkles count={60} scale={12} size={3} opacity={0.6} speed={0.2} color="#ffe4a1" />
+            {data.dividerImageUrl && (
+                <Divider3D url={data.dividerImageUrl} opacity={opacities.divider} scrollOffset={scrollState.offset} />
+            )}
+            <Sparkles count={80} scale={15} size={4} opacity={0.6} speed={0.4} color="#ffe4a1" />
         </>
     );
 }
 
+// Lerp progress in [start, end] to 0–1
+function progressIn(offset: number, start: number, end: number): number {
+    if (offset <= start) return 0;
+    if (offset >= end) return 1;
+    return (offset - start) / (end - start);
+}
+
+// --- HTML SCROLL CONTENT (rendered into ScrollControls’ fixed div via a single root to avoid createRoot twice) ---
+function VisionOverlayContent({ data, scrollStateRef }: { data: VisionData; scrollStateRef: ScrollStateRef }) {
+    const [offset, setOffset] = useState(0);
+    const [height, setHeight] = useState(600);
+    const lastSet = useRef(0);
+    const THROTTLE_MS = 40;
+
+    useEffect(() => {
+        let rafId: number;
+        const tick = () => {
+            rafId = requestAnimationFrame(tick);
+            const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+            if (now - lastSet.current >= THROTTLE_MS) {
+                lastSet.current = now;
+                setOffset(scrollStateRef.current.offset);
+                setHeight(scrollStateRef.current.height);
+            }
+        };
+        rafId = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(rafId);
+    }, [scrollStateRef]);
+
+    const pages = 5;
+    const featuredEnter = progressIn(offset, 0.30, 0.38);
+    const featuredExit = progressIn(offset, 0.42, 0.52);
+    const loveNotesEnter = progressIn(offset, 0.50, 0.62);
+
+    const featuredScale = 0.85 + 0.15 * (1 - featuredExit) * featuredEnter;
+    const featuredY = (1 - featuredEnter) * 32 + featuredExit * -120;
+    const featuredOpacity = Math.min(featuredEnter * (1 - featuredExit * 1.2), 1);
+    const loveNotesY = (1 - loveNotesEnter) * 48;
+    const loveNotesOpacity = loveNotesEnter;
+
+    const translateY = height * (pages - 1) * -offset;
+
+    return (
+        <div
+            className="w-full text-white font-serif relative"
+            style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                willChange: 'transform',
+                transform: `translate3d(0, ${translateY}px, 0)`,
+            }}
+        >
+            <style>{`
+                ::-webkit-scrollbar { width: 7px; background: #000; }
+                ::-webkit-scrollbar-track { background: #050505; }
+                ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+                ::-webkit-scrollbar-thumb:hover { background: #555; }
+            `}</style>
+
+            {/* 0. Intro Text */}
+                <div className="absolute top-0 w-full h-[100vh] flex flex-col justify-end items-center pb-32 pointer-events-none">
+                    <h2 className="text-4xl md:text-5xl font-normal mb-2 text-center drop-shadow-2xl">
+                        Capturing the Unscripted
+                    </h2>
+                    <p className="text-sm tracking-widest uppercase opacity-70">
+                        Cinematic Details That Make Your Story Truly Yours
+                    </p>
+                </div>
+
+                {/* 1. Featured Films — scroll-driven enter (pop) and exit (move away from center) */}
+                <div
+                    className="absolute top-[150vh] w-full min-h-[100vh] flex flex-col justify-center items-center will-change-transform"
+                    style={{
+                        transform: `translateY(${featuredY}px) scale(${featuredScale})`,
+                        opacity: featuredOpacity,
+                        transformOrigin: 'center center',
+                        pointerEvents: featuredOpacity < 0.02 ? 'none' : 'auto',
+                    }}
+                >
+                    <div className="w-full max-w-7xl px-4">
+                        <FeaturedFilms
+                            films={data.featuredVideos.map(v => ({ ...v, youtubeUrl: v.videoUrl }))}
+                            scrollDrivenProgress={featuredEnter}
+                        />
+                    </div>
+                </div>
+
+                {/* 2. Kind Words / Love Letters — appear as Featured Films moves away */}
+                <div
+                    className="absolute top-[250vh] w-full min-h-[100vh] flex flex-col justify-center items-center px-4 pointer-events-none will-change-transform"
+                    style={{
+                        transform: `translateY(${loveNotesY}px)`,
+                        opacity: loveNotesOpacity,
+                    }}
+                >
+                    <div className="max-w-4xl text-center">
+                        <div className="text-white/90 text-2xl tracking-[0.4em] mb-3" aria-hidden>
+                            ☆ ☆ ☆ ☆ ☆
+                        </div>
+                        <h3 className="text-3xl md:text-5xl font-serif text-white mb-2">
+                            Kind Words From Our Couples
+                        </h3>
+                        <p className="text-sm tracking-widest uppercase text-neutral-400 mb-12">
+                            Love Letters That Inspire Us
+                        </p>
+                        <div className="flex flex-col gap-12">
+                            {data.testimonials?.slice(0, 3).map((t, i) => (
+                                <div key={i} className="bg-black/40 backdrop-blur-md p-8 border border-white/10 rounded-lg shadow-xl">
+                                    <p className="text-xl italic mb-6">"{t.quote}"</p>
+                                    <p className="text-sm uppercase font-bold text-neutral-400">— {t.couple}</p>
+                                    {t.location && <p className="text-xs text-neutral-600 mt-2">{t.location}</p>}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* 3. Contact (Start at ~350vh) */}
+                <div className="absolute top-[350vh] w-full min-h-[100vh] flex flex-col justify-center items-center">
+                    <div className="w-full">
+                        <ContactSection />
+                    </div>
+                </div>
+        </div>
+    );
+}
+
+function NavbarLogic() {
+    const scroll = useScroll();
+    const lastDirection = useRef(0);
+    const lastOff = useRef(0);
+
+    useFrame(() => {
+        const off = scroll.offset;
+        const delta = off - lastOff.current;
+        const direction = delta > 0 ? 1 : -1;
+
+        if (Math.abs(delta) > 0.0001 && direction !== lastDirection.current) {
+            const shouldShow = off < 0.02 || direction === -1;
+            window.dispatchEvent(new CustomEvent('storycruz-toggle-nav', { detail: { visible: shouldShow } }));
+            lastDirection.current = direction;
+        }
+        lastOff.current = off;
+    });
+    return null;
+}
+
+// --- SCENE COMPONENT ---
 function Scene({ data }: { data: VisionData }) {
     return (
-        <ScrollControls pages={4} damping={0.3}>
-            <MainSequence data={data} />
-            <NavbarController />
-            <VisionPages data={data} />
+        <ScrollControls pages={5} damping={0.3}>
+            <ScrollStateWriter>
+                <Suspense fallback={null}>
+                    <MainSequence data={data} />
+                    <Environment preset="studio" />
+                </Suspense>
+                <NavbarLogic />
+            </ScrollStateWriter>
         </ScrollControls>
-    )
+    );
 }
 
 export default function VisionScene({ data }: { data: VisionData }) {
+    const wrapperRef = useRef<HTMLDivElement>(null);
+    const scrollStateRef = useRef({ offset: 0, height: 600, pages: 5 });
+    const overlayRootRef = useRef<ReturnType<typeof createRoot> | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        let attempts = 0;
+        const maxAttempts = 30;
+
+        const tryInject = () => {
+            if (cancelled || attempts >= maxAttempts) return;
+            attempts += 1;
+
+            const wrapper = wrapperRef.current;
+            if (!wrapper) return;
+
+            // ScrollControls appends the scroll div to gl.domElement.parentNode.
+            // Path A: wrapper > container > [canvas, scrollEl] > fixed. Path B: wrapper > [canvas, scrollEl] > fixed.
+            const first = wrapper.firstElementChild as HTMLElement | null;
+            const scrollEl =
+                (first?.tagName === 'CANVAS' ? wrapper.children[1] : first?.children?.[1]) as HTMLElement | undefined;
+            let fixedDiv = scrollEl?.children?.[0] as HTMLElement | undefined;
+            if (!fixedDiv && first) {
+                fixedDiv = wrapper.querySelector('[style*="sticky"]') as HTMLElement | undefined;
+            }
+
+            if (!fixedDiv) {
+                requestAnimationFrame(tryInject);
+                return;
+            }
+
+            const root = overlayRootRef.current ?? createRoot(fixedDiv);
+            if (!overlayRootRef.current) overlayRootRef.current = root;
+            root.render(
+                <VisionOverlayContent data={data} scrollStateRef={scrollStateRef} />
+            );
+        };
+
+        const id = requestAnimationFrame(tryInject);
+
+        return () => {
+            cancelled = true;
+            cancelAnimationFrame(id);
+            const root = overlayRootRef.current;
+            overlayRootRef.current = null;
+            // Defer unmount so we don’t unmount while React is still rendering
+            if (root && 'unmount' in root) {
+                queueMicrotask(() => { root.unmount(); });
+            }
+        };
+    }, [data]);
+
+    // Prevent body/document scroll so only ScrollControls’ inner div scrolls (no double scrollbar).
+    useEffect(() => {
+        const prevOverflow = document.body.style.overflow;
+        const prevHeight = document.body.style.height;
+        document.body.style.overflow = 'hidden';
+        document.body.style.height = '100vh';
+        return () => {
+            document.body.style.overflow = prevOverflow;
+            document.body.style.height = prevHeight;
+        };
+    }, []);
+
     return (
-        <div className="h-screen w-full bg-[#050505] relative overflow-hidden text-white selection:bg-white selection:text-black">
-
-            {/* Navigation moved inside Canvas/ScrollControls */}
-
-            <Canvas className="h-full w-full" camera={{ position: [0, 0, 6], fov: 35 }}>
-                <Suspense fallback={null}>
+        <ScrollStateContext.Provider value={scrollStateRef}>
+            <div ref={wrapperRef} className="h-screen w-full min-h-0 bg-[#050505] relative overflow-hidden z-0">
+                <Canvas className="h-full w-full" camera={{ position: [0, 0, 6], fov: 35 }}>
                     <Scene data={data} />
-                    <Environment preset="studio" />
-                </Suspense>
-            </Canvas>
-        </div>
+                </Canvas>
+            </div>
+        </ScrollStateContext.Provider>
     );
 }

@@ -12,22 +12,24 @@ function getYouTubeId(url: string) {
 }
 
 export default async function VisionPage() {
-    const data = await getData();
+    const data = await getVisionData();
     return <VisionScene data={data} />;
 }
 
-async function getData(): Promise<VisionData> {
+export async function getVisionData(): Promise<VisionData> {
     const homepageQuery = `*[_type == "homepage"][0]{
     heroVideo { asset->{url} },
     introLeftImage,
     introSlideshow,
     introRightImage,
-    testimonials
+    testimonials,
+    dividerImage
   }`;
 
-    // Relaxed query: get films even if featured is not strictly checked, order by date
-    const filmsQuery = `*[_type == "film"] | order(publishedAt desc)[0...2]{
+    // Relaxed query: get more films to ensure we have enough to show
+    const filmsQuery = `*[_type == "film"] | order(publishedAt desc)[0...10]{
     title,
+    slug,
     youtubeUrl,
     "thumbnailUrl": customThumbnail.asset->url,
     featured
@@ -38,14 +40,17 @@ async function getData(): Promise<VisionData> {
         client.fetch(filmsQuery)
     ]);
 
-    // Filter for featured in code, or just take the top 2 if none featured (flexible fallback)
+    // Priority: Featured -> Newest
     const featuredDocs = films.filter((f: any) => f.featured);
-    const displayFilms = featuredDocs.length > 0 ? featuredDocs : films.slice(0, 2);
+    const nonFeatured = films.filter((f: any) => !f.featured);
+
+    // Combine: Featured first, then fill remainder from non-featured to get 4 videos max
+    const displayFilms = [...featuredDocs, ...nonFeatured].slice(0, 4);
 
     // Provide safe defaults
     const safeFilms = displayFilms.length > 0 ? displayFilms : [
-        { thumbnailUrl: "/images/photo2.jpg", youtubeUrl: "https://youtube.com", title: "Fallback 1" },
-        { thumbnailUrl: "/images/photo3.jpg", youtubeUrl: "https://youtube.com", title: "Fallback 2" }
+        { thumbnailUrl: "/images/photo2.jpg", youtubeUrl: "https://youtube.com", title: "Fallback 1", slug: { current: "fallback-1" } },
+        { thumbnailUrl: "/images/photo3.jpg", youtubeUrl: "https://youtube.com", title: "Fallback 2", slug: { current: "fallback-2" } }
     ];
 
     // Transform Sanity data to our VisionData shape
@@ -55,6 +60,7 @@ async function getData(): Promise<VisionData> {
         introCenterUrl: homepage?.introSlideshow?.[0] ? urlFor(homepage.introSlideshow[0]).url() : "/images/QA-Home.jpg",
         introSlideshowUrls: homepage?.introSlideshow ? homepage.introSlideshow.map((img: any) => urlFor(img).url()) : [],
         introRightUrl: homepage?.introRightImage ? urlFor(homepage.introRightImage).url() : "/images/photo3.jpg",
+        dividerImageUrl: homepage?.dividerImage ? urlFor(homepage.dividerImage).url() : null,
         testimonials: homepage?.testimonials ? homepage.testimonials.map((t: any) => ({
             quote: t.quote,
             couple: t.couple,
@@ -62,9 +68,11 @@ async function getData(): Promise<VisionData> {
         })) : [],
         featuredVideos: safeFilms.map((f: any) => {
             const ytId = getYouTubeId(f.youtubeUrl);
-            const ytThumb = ytId ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg` : "/images/photo2.jpg";
+            const ytThumb = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : "/images/photo2.jpg";
 
             return {
+                title: f.title,
+                slug: f.slug,
                 thumbnailUrl: f.thumbnailUrl || ytThumb,
                 videoUrl: f.youtubeUrl || ""
             };
