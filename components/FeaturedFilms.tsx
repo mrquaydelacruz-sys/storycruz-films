@@ -1,14 +1,14 @@
 'use client'
-import { useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { useState } from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { motion } from 'framer-motion'
 
 // Helper to extract YouTube ID from any URL format
 function getYouTubeId(url: string) {
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-  const match = url?.match(regExp);
-  return (match && match[2].length === 11) ? match[2] : null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
+  const match = url?.match(regExp)
+  return match && match[2].length === 11 ? match[2] : null
 }
 
 const container = {
@@ -17,7 +17,7 @@ const container = {
     opacity: 1,
     transition: { staggerChildren: 0.12, delayChildren: 0.08 },
   }),
-};
+}
 
 const popIn = {
   hidden: { opacity: 0, scale: 0.82, y: 24 },
@@ -31,7 +31,7 @@ const popIn = {
       damping: 20,
     },
   },
-};
+}
 
 const titleReveal = {
   hidden: { opacity: 0, y: 20 },
@@ -40,20 +40,20 @@ const titleReveal = {
     y: 0,
     transition: { type: 'spring' as const, stiffness: 200, damping: 24 },
   },
-};
+}
 
 export default function FeaturedFilms({
   films,
   scrollDrivenProgress,
 }: {
-  films: any[];
-  scrollDrivenProgress?: number;
+  films: any[]
+  scrollDrivenProgress?: number
 }) {
-  const [playingFilm, setPlayingFilm] = useState<string | null>(null);
-  const isScrollDriven = scrollDrivenProgress !== undefined;
-  const shouldReveal = isScrollDriven ? scrollDrivenProgress > 0.12 : undefined;
+  const [playingFilm, setPlayingFilm] = useState<string | null>(null)
+  const isScrollDriven = scrollDrivenProgress !== undefined
+  const shouldReveal = isScrollDriven ? scrollDrivenProgress > 0.12 : undefined
 
-  if (!films || films.length === 0) return null;
+  if (!films || films.length === 0) return null
 
   return (
     <motion.section
@@ -74,26 +74,16 @@ export default function FeaturedFilms({
         >
           Featured Films
         </motion.h2>
-        <motion.div
-          className="h-[1px] w-20 bg-accent/50"
-          variants={titleReveal}
-        />
+        <motion.div className="h-[1px] w-20 bg-accent/50" variants={titleReveal} />
       </motion.div>
 
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 gap-10"
-        variants={container}
-      >
+      <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-10" variants={container}>
         {films.map((film) => {
-          const videoId = getYouTubeId(film.youtubeUrl);
-          if (!film.slug?.current) return null;
+          const videoId = getYouTubeId(film.youtubeUrl)
+          if (!film.slug?.current) return null
 
           return (
-            <motion.div
-              key={film.slug.current}
-              className="group relative"
-              variants={popIn}
-            >
+            <motion.div key={film.slug.current} className="group relative" variants={popIn}>
               <button
                 onClick={() => videoId && setPlayingFilm(videoId)}
                 className="w-full relative aspect-video bg-neutral-900/40 border border-white/10 overflow-hidden mb-6 cursor-pointer block backdrop-blur-sm"
@@ -126,7 +116,7 @@ export default function FeaturedFilms({
                 </h3>
               </div>
             </motion.div>
-          );
+          )
         })}
       </motion.div>
 
@@ -168,5 +158,5 @@ export default function FeaturedFilms({
         </div>
       )}
     </motion.section>
-  );
+  )
 }
