@@ -4,8 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import FeaturedFilms from "@/components/FeaturedFilms";
 import Testimonials from "@/components/Testimonials";
+import ContactSection from "@/components/ContactSection";
 import IntroSlideshow from "@/components/IntroSlideshow";
-import BackgroundWater from "@/components/BackgroundWater"; // 1. Import the background
+import BackgroundWater from "@/components/BackgroundWater";
 
 async function getData() {
   // Fetch homepage content with 'homepage' tag
@@ -141,7 +142,10 @@ export default async function Home() {
         {/* 5. LOVE NOTES */}
         {home?.testimonials && <Testimonials reviews={home.testimonials} />}
 
-        {/* 6. FOOTER */}
+        {/* 6. CONTACT SECTION */}
+        <ContactSection />
+
+        {/* 7. FOOTER */}
         <section className="h-[20vh] flex items-center justify-center text-neutral-600 text-sm">
           © 2025 StoryCruz Films
         </section>

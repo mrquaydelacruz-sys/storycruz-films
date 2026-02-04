@@ -1,7 +1,6 @@
-import { client, urlFor } from "@/sanity/client";
-import Link from "next/link";
-import Image from "next/image";
+import { client } from "@/sanity/client";
 import BackgroundWater from "@/components/BackgroundWater";
+import ContactSection from "@/components/ContactSection";
 
 // Helper to extract Video ID
 const getYouTubeId = (url: string) => {
@@ -11,22 +10,15 @@ const getYouTubeId = (url: string) => {
   return (match && match[2].length === 11) ? match[2] : null;
 };
 
-// Helper to get YouTube Thumbnail URL
-const getYouTubeThumbnail = (url: string) => {
-  const id = getYouTubeId(url);
-  return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null;
-};
-
 async function getData() {
   // Fetch films with the 'film' tag
   const projects = await client.fetch(
-    `*[_type == "film" && defined(youtubeUrl) && defined(slug.current)] | order(publishedAt desc) {
+    `*[_type == "film" && defined(youtubeUrl)] | order(publishedAt desc) {
       title,
-      slug,
-      customThumbnail,
-      youtubeUrl
-    }`, 
-    {}, 
+      youtubeUrl,
+      description
+    }`,
+    {},
     { next: { tags: ['film'] } }
   );
 
@@ -44,58 +36,60 @@ export default async function FilmsPage() {
   const { projects, title } = await getData();
 
   return (
-    <main className="relative min-h-screen pt-32 px-6 md:px-12 bg-transparent pb-20 overflow-x-hidden">
+    <main className="relative min-h-screen pt-32 bg-transparent pb-20 overflow-x-hidden">
       <BackgroundWater />
 
-      <div className="relative z-10 max-w-6xl mx-auto">
-        <h1 className="text-4xl md:text-6xl font-serif text-accent mb-12 text-center">
+      <div className="relative z-10 max-w-5xl mx-auto px-6 md:px-12">
+        <h1 className="text-4xl md:text-6xl font-serif text-accent mb-16 text-center">
           {title || "Cinematic Films"}
         </h1>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-          {projects.map((project: any) => {
-            const youtubeImage = getYouTubeThumbnail(project.youtubeUrl);
-            const customImage = project.customThumbnail ? urlFor(project.customThumbnail).width(800).url() : null;
-            const displayImage = customImage || youtubeImage;
+
+        {/* Single Column Layout with Embedded Videos */}
+        <div className="space-y-20">
+          {projects.map((project: any, index: number) => {
+            const videoId = getYouTubeId(project.youtubeUrl);
 
             return (
-              <Link 
-                href={`/films/${project.slug.current}`} 
-                key={project.slug.current}
-                className="group block relative"
+              <div
+                key={index}
+                className="bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-sm rounded-2xl border border-white/10 p-6 md:p-8 shadow-2xl"
               >
-                <div className="relative aspect-video bg-neutral-900/40 overflow-hidden mb-4 border border-white/5 backdrop-blur-sm">
-                  {displayImage ? (
-                    <Image 
-                      src={displayImage} 
-                      alt={project.title} 
-                      fill 
-                      className="object-cover opacity-80 group-hover:opacity-60 transition-opacity duration-500"
-                      unoptimized={!customImage}
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-white/20">
-                      No Preview Available
-                    </div>
-                  )}
+                {/* Video Title */}
+                <h2 className="text-2xl md:text-3xl font-serif text-white mb-4 text-center">
+                  {project.title}
+                </h2>
 
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-16 h-16 rounded-full border border-offwhite/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 bg-black/20 backdrop-blur-sm">
-                      <div className="w-0 h-0 border-t-[10px] border-t-transparent border-l-[18px] border-l-offwhite border-b-[10px] border-b-transparent ml-1"></div>
-                    </div>
+                {/* Video Embed */}
+                {videoId ? (
+                  <div className="relative aspect-video w-full rounded-lg overflow-hidden shadow-xl mb-4">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&cc_load_policy=0&fs=1&color=white`}
+                      title={project.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="absolute inset-0 w-full h-full"
+                    />
                   </div>
-                </div>
-                
-                <div className="text-center">
-                  <h3 className="text-xl font-serif text-offwhite group-hover:text-accent transition-colors">
-                    {project.title}
-                  </h3>
-                </div>
-              </Link>
+                ) : (
+                  <div className="relative aspect-video w-full rounded-lg bg-neutral-900/40 flex items-center justify-center text-white/20">
+                    Video unavailable
+                  </div>
+                )}
+
+                {/* Optional Description */}
+                {project.description && (
+                  <p className="text-neutral-400 text-center text-sm md:text-base leading-relaxed mt-4">
+                    {project.description}
+                  </p>
+                )}
+              </div>
             );
           })}
         </div>
       </div>
+
+      {/* Contact Section */}
+      <ContactSection />
     </main>
   );
 }

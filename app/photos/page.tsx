@@ -2,6 +2,7 @@ import { client, urlFor } from "@/sanity/client";
 import Image from "next/image";
 import Link from "next/link";
 import HeaderCarousel from "@/components/HeaderCarousel";
+import ContactSection from "@/components/ContactSection";
 
 async function getData() {
   // We use Promise.all to fetch both data sources at the same time (faster)
@@ -43,24 +44,24 @@ export default async function PhotosPage() {
           {siteData?.photosTitle || "Photography"}
         </h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 max-w-7xl mx-auto">
-          {albums.map((album: any, index: number) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+          {albums.map((album: any) => (
             <Link href={`/photos/${album.slug.current}`} key={album.slug.current} className="group block">
-              {/* Polaroid Style Card */}
-              <div className={`bg-[#fdfdfd] p-[3px] shadow-xl transition-all duration-700 group-hover:rotate-0 ${index % 2 === 0 ? 'rotate-[-1.5deg]' : 'rotate-[1.5deg]'}`}>
+              {/* Magazine Style Card */}
+              <div className="bg-[#fdfdfd] p-[3px] shadow-lg transition-all duration-500 group-hover:shadow-2xl group-hover:scale-[1.02]">
                 <div className="relative aspect-[3/4] overflow-hidden bg-neutral-900">
                   {album.coverImage && (
-                    <Image 
-                      src={urlFor(album.coverImage).width(800).url()} 
-                      alt={album.title} 
-                      fill 
-                      className="object-cover" 
+                    <Image
+                      src={urlFor(album.coverImage).width(800).url()}
+                      alt={album.title}
+                      fill
+                      className="object-cover transition-transform duration-700 group-hover:scale-105"
                     />
                   )}
                 </div>
               </div>
               <div className="mt-6 text-center">
-                <h3 className="text-lg font-serif text-white group-hover:text-gray-300 transition-colors">
+                <h3 className="text-lg font-serif text-white group-hover:text-accent transition-colors duration-300">
                   {album.title}
                 </h3>
               </div>
@@ -68,6 +69,9 @@ export default async function PhotosPage() {
           ))}
         </div>
       </div>
+
+      {/* CONTACT SECTION */}
+      <ContactSection />
 
     </main>
   );

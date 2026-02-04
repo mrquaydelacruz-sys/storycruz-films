@@ -1,23 +1,28 @@
 'use client'
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import Image from 'next/image';
 import { urlFor } from '@/sanity/client';
 
-// DELETE THIS LINE: import { WelcomePopup } from "@/components/WelcomePopup"; 
+// DELETE THIS LINE: import { WelcomePopup } from "@/components/WelcomePopup";
 
 export function WelcomePopup({ data }: { data: any }) {
   const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
+    // Don't show popup on commercial page (not wedding-related)
+    if (pathname === '/commercial') return;
+
     const hasSeen = sessionStorage.getItem('hasSeenPopup');
-    
+
     if (data?.popupActive && !hasSeen) {
       const timer = setTimeout(() => setIsOpen(true), 1000);
       return () => clearTimeout(timer);
     }
-  }, [data]);
+  }, [data, pathname]);
 
   const handleClose = () => {
     setIsOpen(false);
