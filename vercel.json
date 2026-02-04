@@ -1,0 +1,10 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "storycruzfilms.com" }],
+      "destination": "https://www.storycruzfilms.com/:path*",
+      "permanent": true
+    }
+  ]
+}

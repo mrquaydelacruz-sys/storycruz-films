@@ -32,18 +32,23 @@ export const metadata: Metadata = {
   description: "High-end wedding photography and videography",
 };
 
-// 2. Updated fetch function to get Logo AND Popup data
+// 2. Updated fetch function to get Logo AND Popup data (with fallback so layout never 404s)
 async function getData() {
-  return await client.fetch(`*[_type == "siteContent"][0]{ 
-    navbarLogo,
-    // Popup Fields
-    popupActive,
-    popupImage,
-    popupTitle,
-    popupText,
-    popupLink,
-    popupLinkText
-  }`);
+  try {
+    return await client.fetch(`*[_type == "siteContent"][0]{ 
+      navbarLogo,
+      // Popup Fields
+      popupActive,
+      popupImage,
+      popupTitle,
+      popupText,
+      popupLink,
+      popupLinkText
+    }`);
+  } catch (e) {
+    console.warn("Layout getData failed (Sanity/env?), using defaults:", e);
+    return null;
+  }
 }
 
 export default async function RootLayout({
@@ -53,7 +58,7 @@ export default async function RootLayout({
 }>) {
   const data = await getData();
 
-  // Extract the logo URL specifically for the Navbar
+  // Extract the logo URL specifically for the Navbar (safe if data is null)
   const logoUrl = data?.navbarLogo ? urlFor(data.navbarLogo).url() : undefined;
 
   return (
