@@ -26,7 +26,7 @@ const popIn = {
     scale: 1,
     y: 0,
     transition: {
-      type: 'spring',
+      type: 'spring' as const,
       stiffness: 260,
       damping: 20,
     },
@@ -38,7 +38,7 @@ const titleReveal = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { type: 'spring', stiffness: 200, damping: 24 },
+    transition: { type: 'spring' as const, stiffness: 200, damping: 24 },
   },
 };
 
@@ -94,25 +94,25 @@ export default function FeaturedFilms({
               className="group relative"
               variants={popIn}
             >
-              <button 
+              <button
                 onClick={() => videoId && setPlayingFilm(videoId)}
                 className="w-full relative aspect-video bg-neutral-900/40 border border-white/10 overflow-hidden mb-6 cursor-pointer block backdrop-blur-sm"
               >
                 {/* 1. YOUTUBE THUMBNAIL LOGIC */}
                 {videoId ? (
-                  <Image 
-                    src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`} 
-                    alt={film.title} 
-                    fill 
+                  <Image
+                    src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
+                    alt={film.title}
+                    fill
                     unoptimized // Essential for external YouTube images
-                    className="object-cover opacity-80 group-hover:opacity-60 group-hover:scale-105 transition-all duration-700" 
+                    className="object-cover opacity-80 group-hover:opacity-60 group-hover:scale-105 transition-all duration-700"
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center bg-neutral-800 text-white/20">
                     No Video Link
                   </div>
                 )}
-                
+
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="w-16 h-16 rounded-full border border-white/30 flex items-center justify-center backdrop-blur-sm group-hover:scale-110 group-hover:bg-white/10 transition-all duration-300">
                     <div className="w-0 h-0 border-t-[10px] border-t-transparent border-l-[18px] border-l-white border-b-[10px] border-b-transparent ml-1"></div>
@@ -136,7 +136,7 @@ export default function FeaturedFilms({
         animate={isScrollDriven ? (shouldReveal ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }) : undefined}
         whileInView={isScrollDriven ? undefined : { opacity: 1, y: 0 }}
         viewport={isScrollDriven ? undefined : { once: true, amount: 0.3 }}
-        transition={{ type: 'spring', stiffness: 200, damping: 24, delay: 0.2 }}
+        transition={{ type: 'spring' as const, stiffness: 200, damping: 24, delay: 0.2 }}
       >
         <Link
           href="/films"
@@ -147,7 +147,7 @@ export default function FeaturedFilms({
       </motion.div>
 
       {playingFilm && (
-        <div 
+        <div
           className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 md:p-12 backdrop-blur-md"
           onClick={() => setPlayingFilm(null)}
         >
