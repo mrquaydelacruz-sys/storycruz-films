@@ -1,35 +1,36 @@
-# StoryCruz Films
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-Next.js + Sanity site for **storycruzfilms.com**.
+## Getting Started
 
-## Project & Git root
-
-**This folder is the Git repository root.** For everything to work correctly:
-
-- **GitHub Desktop**: Add this folder (File → Add Local Repository → choose `storycruz-films`).
-- **Cursor / agents**: Use this folder as the project root so Git and tooling recognize the repo.
-- **Terminal**: Run `git` commands from inside this folder.
-
-## Reconnect Git / re-authenticate
-
-If push fails or GitHub asks to sign in again:
-
-1. **GitHub Desktop**  
-   - File → Options → Accounts → sign out, then sign in again with your GitHub account.
-
-2. **Terminal (HTTPS)**  
-   - macOS: Keychain Access may have an old GitHub password. Remove “github.com” and run `git push` again; Git will prompt for a **Personal Access Token** (Settings → Developer settings → Personal access tokens on GitHub).  
-   - Or: `git config credential.helper osxkeychain` then push and enter token when asked.
-
-3. **Terminal (SSH)**  
-   - Use an SSH remote: `git remote set-url origin git@github.com:mrquaydelacruz-sys/storycruz-films.git`  
-   - Ensure SSH key is added to GitHub and `ssh -T git@github.com` works.
-
-## Develop
+First, run the development server:
 
 ```bash
-npm install
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
