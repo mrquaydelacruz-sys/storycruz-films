@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 
 // Helper to extract YouTube ID from any URL format
 function getYouTubeId(url: string) {
@@ -10,25 +11,80 @@ function getYouTubeId(url: string) {
   return (match && match[2].length === 11) ? match[2] : null;
 }
 
+const container = {
+  hidden: { opacity: 0 },
+  visible: (i = 1) => ({
+    opacity: 1,
+    transition: { staggerChildren: 0.12, delayChildren: 0.08 },
+  }),
+};
+
+const popIn = {
+  hidden: { opacity: 0, scale: 0.82, y: 24 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: {
+      type: 'spring',
+      stiffness: 260,
+      damping: 20,
+    },
+  },
+};
+
+const titleReveal = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring', stiffness: 200, damping: 24 },
+  },
+};
+
 export default function FeaturedFilms({ films }: { films: any[] }) {
   const [playingFilm, setPlayingFilm] = useState<string | null>(null);
 
   if (!films || films.length === 0) return null;
 
   return (
-    <section className="relative z-10 py-24 px-6 md:px-12 max-w-7xl mx-auto">
-      <div className="flex flex-col items-center text-center mb-16">
-        <h2 className="text-3xl md:text-5xl font-serif text-white mb-6">Featured Films</h2>
-        <div className="h-[1px] w-20 bg-accent/50"></div>
-      </div>
+    <motion.section
+      className="relative z-10 py-24 px-6 md:px-12 max-w-7xl mx-auto"
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.55, margin: '80px 0px 0px 0px' }}
+      variants={container}
+    >
+      <motion.div
+        className="flex flex-col items-center text-center mb-16"
+        variants={titleReveal}
+      >
+        <motion.h2
+          className="text-3xl md:text-5xl font-serif text-white mb-6"
+          variants={titleReveal}
+        >
+          Featured Films
+        </motion.h2>
+        <motion.div
+          className="h-[1px] w-20 bg-accent/50"
+          variants={titleReveal}
+        />
+      </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-2 gap-10"
+        variants={container}
+      >
         {films.map((film) => {
           const videoId = getYouTubeId(film.youtubeUrl);
-          if (!film.slug?.current) return null; 
+          if (!film.slug?.current) return null;
 
           return (
-            <div key={film.slug.current} className="group relative">
+            <motion.div
+              key={film.slug.current}
+              className="group relative"
+              variants={popIn}
+            >
               <button 
                 onClick={() => videoId && setPlayingFilm(videoId)}
                 className="w-full relative aspect-video bg-neutral-900/40 border border-white/10 overflow-hidden mb-6 cursor-pointer block backdrop-blur-sm"
@@ -60,20 +116,25 @@ export default function FeaturedFilms({ films }: { films: any[] }) {
                   {film.title}
                 </h3>
               </div>
-            </div>
+            </motion.div>
           );
         })}
-      </div>
+      </motion.div>
 
-      {/* ... Rest of the component (See More button and Lightbox) remains the same */}
-      <div className="flex justify-center mt-16">
-        <Link 
+      <motion.div
+        className="flex justify-center mt-16"
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 24, delay: 0.2 }}
+      >
+        <Link
           href="/films"
           className="px-8 py-3 border border-white/20 text-sm uppercase tracking-widest text-white hover:bg-white hover:text-black transition-all duration-300"
         >
           See All Films
         </Link>
-      </div>
+      </motion.div>
 
       {playingFilm && (
         <div 
@@ -96,6 +157,6 @@ export default function FeaturedFilms({ films }: { films: any[] }) {
           </div>
         </div>
       )}
-    </section>
+    </motion.section>
   );
 }
