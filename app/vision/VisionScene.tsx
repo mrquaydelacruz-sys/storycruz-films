@@ -508,11 +508,23 @@ export default function VisionScene({ data }: { data: VisionData }) {
     }, [data]);
 
     // Prevent body/document scroll so only ScrollControls’ inner div scrolls (no double scrollbar).
+    // On smaller mobile screens (like iPhone), locking the body to 100vh can cause
+    // sections to be visually covered or clipped by the browser chrome. To avoid that,
+    // we only apply the body lock on larger viewports (desktop / large tablets).
     useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const isDesktopLike = window.innerWidth >= 1024;
+        if (!isDesktopLike) {
+            // Let the document scroll normally on mobile so content isn't clipped.
+            return;
+        }
+
         const prevOverflow = document.body.style.overflow;
         const prevHeight = document.body.style.height;
         document.body.style.overflow = 'hidden';
         document.body.style.height = '100vh';
+
         return () => {
             document.body.style.overflow = prevOverflow;
             document.body.style.height = prevHeight;
