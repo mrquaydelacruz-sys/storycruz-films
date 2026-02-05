@@ -7,13 +7,13 @@ import CustomCursor from "@/components/CustomCursor";
 import { client, urlFor } from "@/sanity/client";
 import { WelcomePopup } from "@/components/WelcomePopup";
 
-const playfair = Playfair_Display({ 
+const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-serif",
   display: "swap",
 });
 
-const lato = Lato({ 
+const lato = Lato({
   weight: ["400", "700"],
   subsets: ["latin"],
   variable: "--font-sans",
@@ -28,8 +28,25 @@ const cursive = Alex_Brush({
 });
 
 export const metadata: Metadata = {
-  title: "StoryCruz Films",
-  description: "High-end wedding photography and videography",
+  metadataBase: new URL('https://www.storycruzfilms.com'),
+  title: {
+    default: "StoryCruz Films | Cinematic Weddings & Branding",
+    template: "%s | StoryCruz Films"
+  },
+  description: "High-end wedding photography and videography. Capturing the unscripted, cinematic details that make your story truly yours.",
+  openGraph: {
+    title: "StoryCruz Films | Cinematic Weddings & Branding",
+    description: "High-end wedding photography and videography.",
+    url: 'https://www.storycruzfilms.com',
+    siteName: 'StoryCruz Films',
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "StoryCruz Films",
+    description: "High-end wedding photography and videography.",
+  },
 };
 
 // 2. Updated fetch function to get Logo AND Popup data (with fallback so layout never 404s)
