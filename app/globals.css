@@ -30,3 +30,75 @@ body.menu-open main {
   transition: filter 0.5s ease;
   pointer-events: none; /* Prevents clicking through the menu */
 }
+
+/* Custom cursor (moved from styled-jsx to avoid React #130 in Next.js 16 App Router) */
+.custom-cursor-camera {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 0 8px rgba(212, 165, 116, 0.3));
+}
+
+.custom-cursor-ring {
+  position: fixed;
+  width: 40px;
+  height: 40px;
+  border: 2px solid rgba(212, 165, 116, 0.4);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.click-ripple {
+  position: fixed;
+  width: 60px;
+  height: 60px;
+  border: 3px solid #d4a574;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9997;
+  transform: translate(-50%, -50%) scale(0);
+  animation: ripple-animation 0.6s ease-out;
+}
+
+@keyframes ripple-animation {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
+}
+
+body.custom-cursor-active {
+  cursor: none !important;
+}
+
+body.custom-cursor-active a,
+body.custom-cursor-active button,
+body.custom-cursor-active input,
+body.custom-cursor-active textarea,
+body.custom-cursor-active select {
+  cursor: none !important;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .custom-cursor-camera,
+  .custom-cursor-ring,
+  .click-ripple {
+    display: none !important;
+  }
+
+  body.custom-cursor-active,
+  body.custom-cursor-active a,
+  body.custom-cursor-active button,
+  body.custom-cursor-active input,
+  body.custom-cursor-active textarea,
+  body.custom-cursor-active select {
+    cursor: auto !important;
+  }
+}

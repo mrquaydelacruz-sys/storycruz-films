@@ -6,8 +6,6 @@ import { X } from 'lucide-react';
 import Image from 'next/image';
 import { urlFor } from '@/sanity/client';
 
-// DELETE THIS LINE: import { WelcomePopup } from "@/components/WelcomePopup";
-
 export function WelcomePopup({ data }: { data: any }) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();

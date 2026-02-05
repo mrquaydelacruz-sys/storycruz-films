@@ -5,15 +5,21 @@ export default function CustomCursor() {
   const [position, setPosition] = useState({ x: -100, y: -100 });
   const [isHovering, setIsHovering] = useState(false);
   const [isClicking, setIsClicking] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
     const updatePosition = (e: MouseEvent) => {
       setPosition({ x: e.clientX, y: e.clientY });
     };
 
     const handleMouseOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      // Check if hovering over interactive elements
       if (
         target.tagName === 'A' ||
         target.tagName === 'BUTTON' ||
@@ -27,30 +33,29 @@ export default function CustomCursor() {
       }
     };
 
-    const handleMouseDown = () => {
-      setIsClicking(true);
-    };
-
-    const handleMouseUp = () => {
-      setIsClicking(false);
-    };
+    const handleMouseDown = () => setIsClicking(true);
+    const handleMouseUp = () => setIsClicking(false);
 
     window.addEventListener('mousemove', updatePosition);
     window.addEventListener('mouseover', handleMouseOver);
     window.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('mouseup', handleMouseUp);
 
+    document.body.classList.add('custom-cursor-active');
+
     return () => {
       window.removeEventListener('mousemove', updatePosition);
       window.removeEventListener('mouseover', handleMouseOver);
       window.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mouseup', handleMouseUp);
+      document.body.classList.remove('custom-cursor-active');
     };
-  }, []);
+  }, [mounted]);
+
+  if (!mounted) return null;
 
   return (
     <>
-      {/* Camera Icon Cursor */}
       <div
         className="custom-cursor-camera"
         style={{
@@ -59,8 +64,8 @@ export default function CustomCursor() {
           transform: isClicking
             ? 'translate(-50%, -50%) scale(0.8)'
             : isHovering
-            ? 'translate(-50%, -50%) scale(1.3)'
-            : 'translate(-50%, -50%) scale(1)',
+              ? 'translate(-50%, -50%) scale(1.3)'
+              : 'translate(-50%, -50%) scale(1)',
         }}
       >
         <svg
@@ -89,18 +94,13 @@ export default function CustomCursor() {
         </svg>
       </div>
 
-      {/* Click Effect Ripple */}
       {isClicking && (
         <div
           className="click-ripple"
-          style={{
-            left: `${position.x}px`,
-            top: `${position.y}px`,
-          }}
+          style={{ left: `${position.x}px`, top: `${position.y}px` }}
         />
       )}
 
-      {/* Outer Ring */}
       <div
         className="custom-cursor-ring"
         style={{
@@ -109,76 +109,10 @@ export default function CustomCursor() {
           transform: isClicking
             ? 'translate(-50%, -50%) scale(0.7)'
             : isHovering
-            ? 'translate(-50%, -50%) scale(1.5)'
-            : 'translate(-50%, -50%) scale(1)',
+              ? 'translate(-50%, -50%) scale(1.5)'
+              : 'translate(-50%, -50%) scale(1)',
         }}
       />
-
-      <style jsx>{`
-        .custom-cursor-camera {
-          position: fixed;
-          pointer-events: none;
-          z-index: 9999;
-          transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-          filter: drop-shadow(0 0 8px rgba(212, 165, 116, 0.3));
-        }
-
-        .custom-cursor-ring {
-          position: fixed;
-          width: 40px;
-          height: 40px;
-          border: 2px solid rgba(212, 165, 116, 0.4);
-          border-radius: 50%;
-          pointer-events: none;
-          z-index: 9998;
-          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .click-ripple {
-          position: fixed;
-          width: 60px;
-          height: 60px;
-          border: 3px solid #d4a574;
-          border-radius: 50%;
-          pointer-events: none;
-          z-index: 9997;
-          transform: translate(-50%, -50%) scale(0);
-          animation: ripple-animation 0.6s ease-out;
-        }
-
-        @keyframes ripple-animation {
-          0% {
-            transform: translate(-50%, -50%) scale(0.5);
-            opacity: 1;
-          }
-          100% {
-            transform: translate(-50%, -50%) scale(2);
-            opacity: 0;
-          }
-        }
-
-        :global(body) {
-          cursor: none !important;
-        }
-
-        :global(a, button, input, textarea, select) {
-          cursor: none !important;
-        }
-
-        /* Hide custom cursor on touch devices */
-        @media (hover: none) and (pointer: coarse) {
-          .custom-cursor-camera,
-          .custom-cursor-ring,
-          .click-ripple {
-            display: none !important;
-          }
-
-          :global(body),
-          :global(a, button, input, textarea, select) {
-            cursor: auto !important;
-          }
-        }
-      `}</style>
     </>
   );
 }
