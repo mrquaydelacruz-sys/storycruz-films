@@ -23,7 +23,7 @@ function ScrollStateWriter({ children }: { children: React.ReactNode }) {
         if (stateRef?.current) {
             stateRef.current.offset = scroll.offset;
             stateRef.current.height = size.height;
-            stateRef.current.pages = 5;
+            stateRef.current.pages = 8;
         }
     });
     return <>{children}</>;
@@ -320,13 +320,14 @@ function VisionOverlayContent({ data, scrollStateRef }: { data: VisionData; scro
         return () => cancelAnimationFrame(rafId);
     }, [scrollStateRef]);
 
-    const pages = 5;
-    const featuredEnter = progressIn(offset, 0.30, 0.38);
-    const featuredExit = progressIn(offset, 0.42, 0.52);
-    const loveNotesEnter = progressIn(offset, 0.50, 0.62);
+    const pages = 8;
+    // Slower, wider transitions so each section stays visible and has time to load
+    const featuredEnter = progressIn(offset, 0.22, 0.36);
+    const featuredExit = progressIn(offset, 0.44, 0.58);
+    const loveNotesEnter = progressIn(offset, 0.50, 0.68);
 
     // Scroll hint fades out shortly after the user starts scrolling
-    const scrollHintOpacity = 1 - progressIn(offset, 0.02, 0.15);
+    const scrollHintOpacity = 1 - progressIn(offset, 0.02, 0.12);
 
     const featuredScale = 0.85 + 0.15 * (1 - featuredExit) * featuredEnter;
     const featuredY = (1 - featuredEnter) * 32 + featuredExit * -120;
@@ -356,7 +357,7 @@ function VisionOverlayContent({ data, scrollStateRef }: { data: VisionData; scro
             `}</style>
 
             {/* 0. Intro Text */}
-                <div className="absolute top-0 w-full h-[100vh] flex flex-col justify-end items-center pb-32 pointer-events-none">
+                <div className="absolute top-0 w-full h-[100vh] flex flex-col justify-end items-center pb-24 md:pb-32 px-6 md:px-0 pointer-events-none">
                     <h2 className="text-4xl md:text-5xl font-normal mb-2 text-center drop-shadow-2xl">
                         Capturing the Unscripted
                     </h2>
@@ -381,7 +382,7 @@ function VisionOverlayContent({ data, scrollStateRef }: { data: VisionData; scro
 
                 {/* 1. Featured Films — scroll-driven enter (pop) and exit (move away from center) */}
                 <div
-                    className="absolute top-[150vh] w-full min-h-[100vh] flex flex-col justify-center items-center will-change-transform"
+                    className="absolute top-[200vh] w-full min-h-[120vh] md:min-h-[100vh] flex flex-col justify-center items-center will-change-transform py-16 md:py-0"
                     style={{
                         transform: `translateY(${featuredY}px) scale(${featuredScale})`,
                         opacity: featuredOpacity,
@@ -389,7 +390,7 @@ function VisionOverlayContent({ data, scrollStateRef }: { data: VisionData; scro
                         pointerEvents: featuredOpacity < 0.02 ? 'none' : 'auto',
                     }}
                 >
-                    <div className="w-full max-w-7xl px-4">
+                    <div className="w-full max-w-7xl px-6 md:px-4">
                         <FeaturedFilms
                             films={data.featuredVideos.map(v => ({ ...v, youtubeUrl: v.videoUrl }))}
                             scrollDrivenProgress={featuredEnter}
@@ -399,7 +400,7 @@ function VisionOverlayContent({ data, scrollStateRef }: { data: VisionData; scro
 
                 {/* 2. Kind Words / Love Letters — appear as Featured Films moves away */}
                 <div
-                    className="absolute top-[250vh] w-full min-h-[100vh] flex flex-col justify-center items-center px-4 pointer-events-none will-change-transform"
+                    className="absolute top-[400vh] w-full min-h-[120vh] md:min-h-[100vh] flex flex-col justify-center items-center px-6 md:px-4 py-16 md:py-0 pointer-events-none will-change-transform"
                     style={{
                         transform: `translateY(${loveNotesY}px)`,
                         opacity: loveNotesOpacity,
@@ -412,12 +413,12 @@ function VisionOverlayContent({ data, scrollStateRef }: { data: VisionData; scro
                         <h3 className="text-3xl md:text-5xl font-serif text-white mb-2">
                             Kind Words From Our Couples
                         </h3>
-                        <p className="text-sm tracking-widest uppercase text-neutral-400 mb-12">
+                        <p className="text-sm tracking-widest uppercase text-neutral-400 mb-10 md:mb-12">
                             Love Letters That Inspire Us
                         </p>
-                        <div className="flex flex-col gap-12">
+                        <div className="flex flex-col gap-10 md:gap-12">
                             {data.testimonials?.slice(0, 3).map((t, i) => (
-                                <div key={i} className="bg-black/40 backdrop-blur-md p-8 border border-white/10 rounded-lg shadow-xl">
+                                <div key={i} className="bg-black/40 backdrop-blur-md p-6 md:p-8 border border-white/10 rounded-lg shadow-xl">
                                     <p className="text-xl italic mb-6">"{t.quote}"</p>
                                     <p className="text-sm uppercase font-bold text-neutral-400">— {t.couple}</p>
                                     {t.location && <p className="text-xs text-neutral-600 mt-2">{t.location}</p>}
@@ -427,9 +428,9 @@ function VisionOverlayContent({ data, scrollStateRef }: { data: VisionData; scro
                     </div>
                 </div>
 
-                {/* 3. Contact (Start at ~350vh) */}
-                <div className="absolute top-[350vh] w-full min-h-[100vh] flex flex-col justify-center items-center">
-                    <div className="w-full">
+                {/* 3. Contact — extra bottom padding so Inquire button stays above footer on mobile */}
+                <div className="absolute top-[600vh] w-full min-h-[120vh] md:min-h-[100vh] flex flex-col justify-center items-center pb-40 md:pb-32">
+                    <div className="w-full px-4 md:px-0">
                         <ContactSection />
                     </div>
                 </div>
@@ -460,7 +461,7 @@ function NavbarLogic() {
 // --- SCENE COMPONENT ---
 function Scene({ data }: { data: VisionData }) {
     return (
-        <ScrollControls pages={5} damping={0.3}>
+        <ScrollControls pages={8} damping={0.25}>
             <ScrollStateWriter>
                 <Suspense fallback={null}>
                     <MainSequence data={data} />
@@ -474,7 +475,7 @@ function Scene({ data }: { data: VisionData }) {
 
 export default function VisionScene({ data }: { data: VisionData }) {
     const wrapperRef = useRef<HTMLDivElement>(null);
-    const scrollStateRef = useRef({ offset: 0, height: 600, pages: 5 });
+    const scrollStateRef = useRef({ offset: 0, height: 600, pages: 8 });
     const overlayRootRef = useRef<ReturnType<typeof createRoot> | null>(null);
 
     useEffect(() => {

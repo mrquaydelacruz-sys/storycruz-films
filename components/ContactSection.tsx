@@ -5,14 +5,14 @@ import { ArrowRight, Heart, Film, Camera } from 'lucide-react';
 
 export default function ContactSection() {
   return (
-    <section className="relative py-32 px-6 md:px-12 bg-gradient-to-b from-black via-neutral-950 to-black overflow-hidden">
+    <section className="relative py-20 md:py-32 px-6 md:px-12 pb-28 md:pb-32 bg-gradient-to-b from-black via-neutral-950 to-black overflow-hidden">
       {/* Decorative elements */}
       <div className="absolute top-1/4 left-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
       <div className="absolute bottom-1/4 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
 
       <div className="max-w-5xl mx-auto relative z-10">
         {/* Section Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-10 md:mb-12">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
@@ -42,7 +42,7 @@ export default function ContactSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-sm rounded-2xl border border-white/10 p-8 md:p-12 shadow-2xl"
+          className="bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-sm rounded-2xl border border-white/10 p-6 md:p-12 shadow-2xl"
         >
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <p className="text-lg md:text-xl text-white/90 leading-relaxed font-light">
@@ -58,7 +58,7 @@ export default function ContactSection() {
             </p>
 
             {/* Features Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8 pb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6 pt-8 md:pt-8 pb-4">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -108,13 +108,13 @@ export default function ContactSection() {
               </motion.div>
             </div>
 
-            {/* CTA Button — gentle heartbeat pulse + subtle glow */}
+            {/* CTA Button — extra top margin on mobile so it sits above footer */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.6 }}
-              className="pt-8 flex flex-col items-center"
+              className="pt-10 md:pt-8 pb-4 flex flex-col items-center"
             >
               <motion.div
                 className="relative inline-block"

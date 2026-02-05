@@ -27,7 +27,7 @@ export default function Footer() {
   }, []);
 
   return (
-    <footer className="relative z-10 py-20 flex flex-col items-center justify-center gap-8 bg-transparent">
+    <footer className="relative z-10 py-16 md:py-20 pb-[max(4rem,env(safe-area-inset-bottom))] flex flex-col items-center justify-center gap-8 bg-transparent">
       <div className="flex gap-10">
         {data?.socialLinks?.map((link: any, i: number) => {
           const platformKey = link.platform?.toLowerCase().trim();

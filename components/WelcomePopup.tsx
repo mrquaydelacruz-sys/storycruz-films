@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, Link } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import Image from 'next/image';
@@ -81,14 +81,14 @@ export function WelcomePopup({ data }: { data: any }) {
                 {data.popupText}
               </p>
 
-              {data.popupLink && (
-                <a 
-                  href={data.popupLink}
+              {(data.popupLink || data.popupLinkText) && (
+                <Link 
+                  href="/inquire"
                   onClick={handleClose}
                   className="inline-block bg-white text-black px-8 py-3 uppercase tracking-widest text-xs font-bold hover:bg-accent hover:text-white transition-colors"
                 >
-                  {data.popupLinkText}
-                </a>
+                  {data.popupLinkText || 'Inquire'}
+                </Link>
               )}
             </div>
 
