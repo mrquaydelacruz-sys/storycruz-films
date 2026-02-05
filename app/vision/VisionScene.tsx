@@ -5,6 +5,7 @@ import { Environment, useVideoTexture, ScrollControls, useScroll, useTexture, Fl
 import { createRoot } from "react-dom/client";
 import { Suspense, useRef, useState, useEffect, createContext, useContext } from "react";
 import * as THREE from 'three';
+import { ChevronDown } from "lucide-react";
 import { urlFor } from "@/sanity/client";
 import FeaturedFilms from "@/components/FeaturedFilms";
 import ContactSection from "@/components/ContactSection";
@@ -324,6 +325,9 @@ function VisionOverlayContent({ data, scrollStateRef }: { data: VisionData; scro
     const featuredExit = progressIn(offset, 0.42, 0.52);
     const loveNotesEnter = progressIn(offset, 0.50, 0.62);
 
+    // Scroll hint fades out shortly after the user starts scrolling
+    const scrollHintOpacity = 1 - progressIn(offset, 0.02, 0.15);
+
     const featuredScale = 0.85 + 0.15 * (1 - featuredExit) * featuredEnter;
     const featuredY = (1 - featuredEnter) * 32 + featuredExit * -120;
     const featuredOpacity = Math.min(featuredEnter * (1 - featuredExit * 1.2), 1);
@@ -359,6 +363,20 @@ function VisionOverlayContent({ data, scrollStateRef }: { data: VisionData; scro
                     <p className="text-sm tracking-widest uppercase opacity-70">
                         Cinematic Details That Make Your Story Truly Yours
                     </p>
+
+                    {/* Animated scroll hint */}
+                    <div
+                        className="mt-10 flex flex-col items-center gap-4"
+                        style={{ opacity: scrollHintOpacity }}
+                    >
+                        <span className="text-[10px] md:text-xs tracking-[0.35em] uppercase text-neutral-200/80 animate-pulse">
+                            Scroll to explore
+                        </span>
+                        <div className="flex flex-col items-center gap-2">
+                            <div className="w-px h-8 bg-gradient-to-b from-transparent via-white/70 to-transparent animate-pulse" />
+                            <ChevronDown className="w-6 h-6 text-white/90 animate-bounce" />
+                        </div>
+                    </div>
                 </div>
 
                 {/* 1. Featured Films — scroll-driven enter (pop) and exit (move away from center) */}
