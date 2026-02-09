@@ -25,7 +25,7 @@ export default async function AboutPage() {
   const data = await getData();
 
   return (
-    <main className="min-h-screen pt-32 pb-20 bg-black">
+    <main className="min-h-screen pt-32 pb-20 bg-black text-offwhite">
       
       {/* --- SECTION 1: MAIN BIO (QUAY / TOGETHER) --- */}
       <div className="px-6 md:px-12 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-start mb-24">
@@ -46,7 +46,7 @@ export default async function AboutPage() {
           <h1 className="text-4xl md:text-6xl font-serif text-white mb-8">
             {data?.aboutTitle || "Our Story"}
           </h1>
-          <div className="text-offwhite/80 font-sans leading-relaxed text-lg whitespace-pre-wrap">
+          <div className="text-white/90 font-sans leading-relaxed text-lg whitespace-pre-wrap">
             {data?.aboutText}
           </div>
 
@@ -90,7 +90,7 @@ export default async function AboutPage() {
             <h2 className="text-4xl md:text-6xl font-serif text-white mb-8">
               {data?.christineTitle || "Christine"}
             </h2>
-            <div className="text-offwhite/80 font-sans leading-relaxed text-lg whitespace-pre-wrap">
+            <div className="text-white/90 font-sans leading-relaxed text-lg whitespace-pre-wrap">
               {data?.christineText}
             </div>
 

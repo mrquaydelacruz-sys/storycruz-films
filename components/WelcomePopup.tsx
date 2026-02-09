@@ -54,10 +54,11 @@ export function WelcomePopup({ data }: { data: any }) {
           >
             <button 
               onClick={handleClose}
-              className="absolute top-2 right-2 z-20 rounded-full bg-black/50 p-1.5 text-white/80 hover:text-white hover:bg-black/70 transition-colors"
-              aria-label="Close"
+              className="absolute top-3 right-3 z-20 flex items-center justify-center gap-2 min-w-[44px] min-h-[44px] px-4 rounded-full bg-white/95 text-black hover:bg-white shadow-lg active:scale-95 transition-colors md:min-w-0 md:min-h-0 md:px-0 md:top-2 md:right-2 md:p-1.5 md:bg-black/50 md:text-white md:hover:bg-black/70 md:shadow-none"
+              aria-label="Close popup"
             >
-              <X size={20} />
+              <X size={24} className="shrink-0 md:w-5 md:h-5" />
+              <span className="text-sm font-semibold md:hidden">Close</span>
             </button>
 
             {data.popupImage && (
