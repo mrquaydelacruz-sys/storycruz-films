@@ -44,52 +44,40 @@ export function WelcomePopup({ data }: { data: any }) {
             className="absolute inset-0 bg-black/80 backdrop-blur-sm"
           />
 
-          {/* Modal */}
+          {/* Modal — full promo image, no cropping */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="relative w-full max-w-lg bg-[#0a0a0a] border border-white/10 rounded-sm overflow-hidden shadow-2xl"
+            className="relative w-full max-w-[420px] bg-[#0a0a0a] border border-white/10 rounded-sm overflow-hidden shadow-2xl"
           >
-            
             <button 
               onClick={handleClose}
-              className="absolute top-4 right-4 z-20 text-white/50 hover:text-white transition-colors"
+              className="absolute top-2 right-2 z-20 rounded-full bg-black/50 p-1.5 text-white/80 hover:text-white hover:bg-black/70 transition-colors"
+              aria-label="Close"
             >
-              <X size={24} />
+              <X size={20} />
             </button>
 
             {data.popupImage && (
-              <div className="relative h-48 w-full">
-                <Image 
-                  src={urlFor(data.popupImage).url()} 
-                  alt="Welcome" 
-                  fill 
-                  className="object-cover opacity-80"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent" />
+              <div className="relative w-full max-w-[420px] aspect-[4/5] max-h-[85vh] mx-auto">
+                <Link 
+                  href="/inquire" 
+                  onClick={handleClose}
+                  className="block w-full h-full relative focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-[#0a0a0a] rounded-sm"
+                >
+                  <Image 
+                    src={urlFor(data.popupImage).url()} 
+                    alt={data.popupTitle || 'Welcome — Book 2026/2027'} 
+                    fill 
+                    className="object-contain"
+                    sizes="(max-width: 448px) 100vw, 420px"
+                    priority
+                  />
+                </Link>
               </div>
             )}
-
-            <div className="p-8 text-center relative z-10 -mt-10">
-              <h2 className="text-3xl font-serif text-white mb-4">
-                {data.popupTitle}
-              </h2>
-              <p className="text-white/70 font-sans leading-relaxed mb-8">
-                {data.popupText}
-              </p>
-
-              {(data.popupLink || data.popupLinkText) && (
-                <Link 
-                  href="/inquire"
-                  onClick={handleClose}
-                  className="inline-block bg-white text-black px-8 py-3 uppercase tracking-widest text-xs font-bold hover:bg-accent hover:text-white transition-colors"
-                >
-                  {data.popupLinkText || 'Inquire'}
-                </Link>
-              )}
-            </div>
 
           </motion.div>
         </div>
