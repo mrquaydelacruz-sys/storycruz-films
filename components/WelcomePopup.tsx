@@ -33,7 +33,7 @@ export function WelcomePopup({ data }: { data: any }) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+        <div className="fixed inset-0 z-[10050] flex items-center justify-center px-4">
           
           {/* Backdrop */}
           <motion.div 
