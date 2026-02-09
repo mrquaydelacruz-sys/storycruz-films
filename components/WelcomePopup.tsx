@@ -79,6 +79,28 @@ export function WelcomePopup({ data }: { data: any }) {
               </div>
             )}
 
+            <div className="p-6 pt-4 pb-6 text-center">
+              {data.popupTitle && (
+                <h2 className="text-2xl font-serif text-white mb-3">
+                  {data.popupTitle}
+                </h2>
+              )}
+              {data.popupText && (
+                <p className="text-white/70 font-sans text-sm leading-relaxed mb-6">
+                  {data.popupText}
+                </p>
+              )}
+              {(data.popupLink || data.popupLinkText) && (
+                <Link 
+                  href="/inquire"
+                  onClick={handleClose}
+                  className="inline-block bg-white text-black px-6 py-2.5 uppercase tracking-widest text-xs font-bold hover:bg-accent hover:text-white transition-colors"
+                >
+                  {data.popupLinkText || 'Inquire'}
+                </Link>
+              )}
+            </div>
+
           </motion.div>
         </div>
       )}
