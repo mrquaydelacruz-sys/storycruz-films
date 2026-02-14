@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Lato, Alex_Brush } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import CustomCursor from "@/components/CustomCursor";
+import ConditionalLayout from "@/components/ConditionalLayout";
 import { client, urlFor } from "@/sanity/client";
-import { WelcomePopup } from "@/components/WelcomePopup";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -82,20 +79,9 @@ export default async function RootLayout({
     <html lang="en">
       {/* Kept your existing body classes (bg-transparent, fonts, etc.) */}
       <body className={`${playfair.variable} ${lato.variable} ${cursive.variable} antialiased bg-transparent text-offwhite min-h-screen flex flex-col`}>
-
-        {/* Custom Cursor */}
-        <CustomCursor />
-
-        {/* 3. The Welcome Popup sits here (it will handle its own display logic) */}
-        <WelcomePopup data={data} />
-
-        <Navbar logoUrl={logoUrl} />
-
-        <div className="flex-grow">
+        <ConditionalLayout logoUrl={logoUrl} popupData={data}>
           {children}
-        </div>
-
-        <Footer />
+        </ConditionalLayout>
       </body>
     </html>
   );
