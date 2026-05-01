@@ -25,7 +25,7 @@ function logDraftVsPublished(rows: ReadonlyArray<{ _id: string }>, label: string
 
 async function fetchAllPricingDocs<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  T extends Record<string, any>,
+  T extends Record<string, any> & { _id: string },
 >(client: ReturnType<typeof getCliClient>) {
   const rows = await client.fetch<T[]>(
     `*[_type == "pricing"]{ _id, videoPackages, photoPackages }`
@@ -36,7 +36,7 @@ async function fetchAllPricingDocs<
 
 async function fetchAllBriefDocs<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  T extends Record<string, any>,
+  T extends Record<string, any> & { _id: string },
 >(client: ReturnType<typeof getCliClient>) {
   const rows = await client.fetch<T[]>(
     `*[_type == "packageBuilderBrief"]{ _id, photoOfferings, videoOfferings }`
