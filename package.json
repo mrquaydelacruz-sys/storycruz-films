@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sanity:migrate-plain-features": "sanity exec ./scripts/migrate-pricing-plain-features.ts --with-user-token"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

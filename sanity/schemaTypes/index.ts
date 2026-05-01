@@ -7,14 +7,26 @@ import pricing from './pricing' // <--- You already had this, which is great!
 import film from './film'
 import photoGallery from './photoGallery'
 import commercialInquiry from './commercialInquiry'
+import packageBuilderOffering from './packageBuilderOffering'
+import packageBuilderBrief from './packageBuilderBrief'
+import packageBuilderVariable from './packageBuilderVariable'
+import packageOptionalAddOn from './packageOptionalAddOn'
+import pricingPackageFeature from './pricingPackageFeature'
+import pricingPlainFeatureLine from './pricingPlainFeatureLine'
 
 export const schema: { types: SchemaTypeDefinition[] } = {
   types: [
     homepage,
     siteContent,
-    pricing,      // <--- ADD THIS HERE so Sanity knows to use it!
+    pricingPackageFeature,
+    pricingPlainFeatureLine,
+    packageOptionalAddOn,
+    pricing,
     film,
     photoGallery,
     commercialInquiry,
+    packageBuilderOffering,
+    packageBuilderVariable,
+    packageBuilderBrief,
   ],
 }

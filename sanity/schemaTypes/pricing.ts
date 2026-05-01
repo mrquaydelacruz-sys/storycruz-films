@@ -40,7 +40,25 @@ export default defineType({
           { name: 'name', type: 'string', title: 'Package Name' },
           { name: 'price', type: 'string', title: 'Price' },
           { name: 'description', type: 'text', title: 'Short Description' },
-          { name: 'features', type: 'array', title: 'Features List', of: [{ type: 'string' }] }
+          {
+            name: 'features',
+            type: 'array',
+            title: 'Features List',
+            description:
+              'Add **Feature** for removable lines + dollar amount, or **Plain text line** for simple bullets.',
+            of: [
+              { type: 'pricingPackageFeature', title: 'Feature (removable & $)' },
+              { type: 'pricingPlainFeatureLine', title: 'Plain text line' },
+            ],
+          },
+          {
+            name: 'optionalAddOns',
+            title: 'Optional upgrades (package builder)',
+            type: 'array',
+            description:
+              'Adds a “want this too?” checklist on this tier’s card — e.g. extra hour, dual lead, RAW. First $amount is totaled.',
+            of: [{ type: 'packageOptionalAddOn' }],
+          },
         ]
       }]
     }),
@@ -56,7 +74,25 @@ export default defineType({
           { name: 'name', type: 'string', title: 'Package Name' },
           { name: 'price', type: 'string', title: 'Price' },
           { name: 'description', type: 'text', title: 'Short Description' },
-          { name: 'features', type: 'array', title: 'Features List', of: [{ type: 'string' }] }
+          {
+            name: 'features',
+            type: 'array',
+            title: 'Features List',
+            description:
+              'Add **Feature** for removable lines + dollar amount, or **Plain text line** for simple bullets.',
+            of: [
+              { type: 'pricingPackageFeature', title: 'Feature (removable & $)' },
+              { type: 'pricingPlainFeatureLine', title: 'Plain text line' },
+            ],
+          },
+          {
+            name: 'optionalAddOns',
+            title: 'Optional upgrades (package builder)',
+            type: 'array',
+            description:
+              'Adds a “want this too?” checklist on this collection card (extra shooters, RAW, rehearsal, …). First $ totaled.',
+            of: [{ type: 'packageOptionalAddOn' }],
+          },
         ]
       }]
     }),
