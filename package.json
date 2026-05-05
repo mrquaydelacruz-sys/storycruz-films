@@ -7,11 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "sanity": "sanity",
     "sanity:migrate-plain-features": "sanity exec ./scripts/migrate-pricing-plain-features.ts --with-user-token"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
+    "@sanity/client": "^7.14.1",
     "@sanity/image-url": "^2.0.3",
     "@studio-freight/react-lenis": "^0.0.47",
     "clsx": "^2.1.1",
@@ -23,6 +25,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "sanity": "^5.8.0",
+    "styled-components": "^6.1.19",
     "tailwind-merge": "^3.4.0",
     "three": "^0.182.0"
   },
