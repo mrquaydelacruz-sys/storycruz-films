@@ -114,12 +114,15 @@ export function photoPackagesFromPricing(pkgs: unknown): PackageCatalogItem[] {
 }
 
 /**
- * Rows whose title reads like a Signature Combo tier are shown in Photo + film on the interactive
- * package builder—not under Photography—even when authored as Hidden Pricing photo packages rather
- * than seasonal tiers. Plain `/investment/[slug]` still lists them with other photography tiers.
+ * Bundled combo tiers (named in Hidden Pricing under photography) are shown in **Photo + film** on
+ * the interactive package builder—not the Photography column—when the title matches known combo
+ * markers. Plain `/investment/[slug]` still lists them with other photography tiers.
  */
+const PHOTO_FILM_COMBO_TITLE_MARKERS = ['signature combo', 'essential combo'] as const
+
 export function shouldOmitSeasonalComboFromPackageBuilder(item: PackageCatalogItem): boolean {
-  return item.title.toLowerCase().includes('signature combo')
+  const t = item.title.toLowerCase()
+  return PHOTO_FILM_COMBO_TITLE_MARKERS.some((m) => t.includes(m))
 }
 
 /** Seasonal & intimate tiers (often combos) appended under Photography — same storytelling as Investment page. */
