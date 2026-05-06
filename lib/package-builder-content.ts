@@ -461,12 +461,22 @@ function catalogRowsFromInvestmentPricing(pricing: PricingForPackageGroq): {
   if (!pricing)
     return { photoGuide: [], videoGuide: [], photoFilmBundleOffers: [] }
   const seasonalItems = seasonalCollectionsToCatalog(pricing.seasonalCollections)
+  const photoPkgsAll = photoPackagesFromPricing(pricing.photoPackages)
+  /** Combos stored as core photo rows (still on `/investment`) route to Photo + film in builder. */
+  const photoPkgsCore = photoPkgsAll.filter(
+    (item) => !shouldOmitSeasonalComboFromPackageBuilder(item)
+  )
+  const photoPkgsCombo = photoPkgsAll.filter(shouldOmitSeasonalComboFromPackageBuilder)
+
   return {
     photoGuide: [
-      ...photoPackagesFromPricing(pricing.photoPackages),
+      ...photoPkgsCore,
       ...seasonalItems.filter((item) => !shouldOmitSeasonalComboFromPackageBuilder(item)),
     ],
-    photoFilmBundleOffers: seasonalItems.filter(shouldOmitSeasonalComboFromPackageBuilder),
+    photoFilmBundleOffers: [
+      ...photoPkgsCombo,
+      ...seasonalItems.filter(shouldOmitSeasonalComboFromPackageBuilder),
+    ],
     videoGuide: videoPackagesFromPricing(pricing.videoPackages),
   }
 }

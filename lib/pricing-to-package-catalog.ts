@@ -106,9 +106,9 @@ export function photoPackagesFromPricing(pkgs: unknown): PackageCatalogItem[] {
 }
 
 /**
- * Seasonal “Signature Combo”–style rows stay on the Investment Guide, but are hidden from the
- * interactive package builder so couples aren’t picking duplicate bundle cards—use the combined-deal
- * CTA in the builder instead.
+ * Rows whose title reads like a Signature Combo tier are shown in Photo + film on the interactive
+ * package builder—not under Photography—even when authored as Hidden Pricing photo packages rather
+ * than seasonal tiers. Plain `/investment/[slug]` still lists them with other photography tiers.
  */
 export function shouldOmitSeasonalComboFromPackageBuilder(item: PackageCatalogItem): boolean {
   return item.title.toLowerCase().includes('signature combo')
