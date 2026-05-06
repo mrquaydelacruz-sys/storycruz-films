@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Camera,
@@ -256,42 +256,46 @@ function CatalogOption({
                       </p>
                     ) : null}
 
-                    {!customOpen && togglableLines.length === 0 ? (
-                      <p className="text-sm text-white/45 leading-snug">
-                        Every feature in this package is <span className="text-white/60">fixed</span>
-                        —individual lines can&apos;t be removed here.
-                      </p>
-                    ) : !customOpen ? (
-                      <ul className="space-y-2">
-                        {includedLinesUi.length === 0 ? (
-                          <li className="text-sm text-white/45 italic leading-snug">
-                            No bullets kept—use Customize if that was unintended, or confirm with
-                            Story Cruz.
-                          </li>
-                        ) : (
-                          includedLinesUi.map((line) => (
-                            <li
-                              key={line.id}
-                              className="text-sm text-white/75 flex gap-2.5 leading-snug"
-                            >
-                              <Check className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-                              <span>
-                                {line.label}
-                                {line.removable === false ? (
-                                  <span className="text-white/38 text-xs"> (core)</span>
-                                ) : lineDeductionHint(line) != null ? (
-                                  <span className="text-white/35 text-xs">
-                                    {' '}
-                                    (~
-                                    {formatMoneySimple(lineDeductionHint(line)!)}{' '}
-                                    less when unchecked)
-                                  </span>
-                                ) : null}
-                              </span>
+                    {!customOpen ? (
+                      <>
+                        {togglableLines.length === 0 ? (
+                          <p className="text-sm text-white/45 leading-snug mb-3">
+                            Every feature in this package is{' '}
+                            <span className="text-white/60">fixed</span>
+                            —individual lines can&apos;t be removed here.
+                          </p>
+                        ) : null}
+                        <ul className="space-y-2">
+                          {includedLinesUi.length === 0 ? (
+                            <li className="text-sm text-white/45 italic leading-snug">
+                              No bullets kept—use Customize if that was unintended, or confirm with
+                              Story Cruz.
                             </li>
-                          ))
-                        )}
-                      </ul>
+                          ) : (
+                            includedLinesUi.map((line) => (
+                              <li
+                                key={line.id}
+                                className="text-sm text-white/75 flex gap-2.5 leading-snug"
+                              >
+                                <Check className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                                <span>
+                                  {line.label}
+                                  {line.removable === false ? (
+                                    <span className="text-white/38 text-xs"> (core)</span>
+                                  ) : lineDeductionHint(line) != null ? (
+                                    <span className="text-white/35 text-xs">
+                                      {' '}
+                                      (~
+                                      {formatMoneySimple(lineDeductionHint(line)!)}{' '}
+                                      less when unchecked)
+                                    </span>
+                                  ) : null}
+                                </span>
+                              </li>
+                            ))
+                          )}
+                        </ul>
+                      </>
                     ) : null}
 
                     {customOpen ? (
@@ -822,6 +826,7 @@ export default function TestingPackageBuilder({
   videoColumnTitle,
   videoColumnSubtitle,
   photoCatalog,
+  photoFilmBundleOffers = [],
   videoCatalog,
   addonCatalog,
   addonSectionTitle,
@@ -844,7 +849,9 @@ export default function TestingPackageBuilder({
   const [eventDate, setEventDate] = useState('')
   const [location, setLocation] = useState('')
   const [notes, setNotes] = useState('')
+  const notesRef = useRef<HTMLTextAreaElement>(null)
 
+  const [showPhotoFilmBundles, setShowPhotoFilmBundles] = useState(false)
   const [photoSelected, setPhotoSelected] = useState<Set<string>>(new Set())
   const [videoSelected, setVideoSelected] = useState<Set<string>>(new Set())
   /** When a tier is selected and this is false, only selected tier cards render (less clutter). */
@@ -912,7 +919,26 @@ export default function TestingPackageBuilder({
     return videoCatalog.filter((i) => videoSelected.has(i.id))
   }, [videoCatalog, videoSelected, videoBrowseAllTiers])
 
-  const selectedPhotoItems = photoCatalog.filter((i) => photoSelected.has(i.id))
+  /** Includes seasonal combo tiers (not listed in main column until “bundles” is opened). */
+  const photoCatalogForSelections = useMemo(() => {
+    const seen = new Set<string>()
+    const out: PackageCatalogItem[] = []
+    for (const x of photoCatalog) {
+      if (!seen.has(x.id)) {
+        seen.add(x.id)
+        out.push(x)
+      }
+    }
+    for (const x of photoFilmBundleOffers) {
+      if (!seen.has(x.id)) {
+        seen.add(x.id)
+        out.push(x)
+      }
+    }
+    return out
+  }, [photoCatalog, photoFilmBundleOffers])
+
+  const selectedPhotoItems = photoCatalogForSelections.filter((i) => photoSelected.has(i.id))
   const selectedVideoItems = videoCatalog.filter((i) => videoSelected.has(i.id))
   const getPhotoEnhancementExcluded = (
     tierId: string,
@@ -1300,6 +1326,125 @@ export default function TestingPackageBuilder({
     )
   }
 
+  const focusNotesField = () => {
+    notesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    window.setTimeout(() => notesRef.current?.focus(), 380)
+  }
+
+  const togglePhotoFilmBundlesAndScroll = () => {
+    setShowPhotoFilmBundles((open) => {
+      const next = !open
+      if (next) {
+        window.requestAnimationFrame(() => {
+          document
+            .getElementById('photo-film-bundle-list')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        })
+      }
+      return next
+    })
+  }
+
+  const renderPhotoTierItem = (item: PackageCatalogItem) => (
+    <CatalogOption
+      key={item.id}
+      item={item}
+      selected={photoSelected.has(item.id)}
+      enhancementCatalog={addonCatalog}
+      enhancementSectionTitle={addonSectionTitle}
+      enhancementSectionSubtitle={addonSectionSubtitle}
+      enhancementSelectedIds={photoEnhanceByTier[item.id] ?? FALLBACK_EMPTY_OPTIONAL}
+      onAddEnhancement={(addonId) => {
+        setPhotoEnhanceByTier((prev) => {
+          const base = new Set(prev[item.id] ?? [])
+          if (base.has(addonId)) return prev
+          base.add(addonId)
+          return { ...prev, [item.id]: base }
+        })
+      }}
+      onRemoveEnhancement={(addonId) => {
+        setPhotoEnhanceByTier((prev) => {
+          const base = new Set(prev[item.id] ?? [])
+          base.delete(addonId)
+          const merged = { ...prev }
+          if (base.size === 0) delete merged[item.id]
+          else merged[item.id] = base
+          return merged
+        })
+        setPhotoEnhanceLineExcl((nex) => {
+          const tier = nex[item.id]
+          if (!tier?.[addonId]) return nex
+          const tierNext = { ...tier }
+          delete tierNext[addonId]
+          const merged = { ...nex }
+          if (Object.keys(tierNext).length === 0) delete merged[item.id]
+          else merged[item.id] = tierNext
+          return merged
+        })
+      }}
+      enhancementLineExclusionsGetter={(addonId) =>
+        getPhotoEnhancementExcluded(item.id, addonId)
+      }
+      onEnhancementLineIncludeChange={(addonId, lineId, nowIncluded) => {
+        setPhotoEnhanceLineExcl((prev) => {
+          const tierNested = prev[item.id] ?? {}
+          const cur = new Set(tierNested[addonId] ?? [])
+          if (nowIncluded) cur.delete(lineId)
+          else cur.add(lineId)
+          return {
+            ...prev,
+            [item.id]: { ...tierNested, [addonId]: cur },
+          }
+        })
+      }}
+      optionalSelectedIds={photoPackageOptionalAdds[item.id] ?? FALLBACK_EMPTY_OPTIONAL}
+      onToggleOptionalAdd={(addonId) => {
+        setPhotoPackageOptionalAdds((prev) => {
+          const base = new Set(prev[item.id] ?? [])
+          return {
+            ...prev,
+            [item.id]: toggleInSet(base, addonId),
+          }
+        })
+      }}
+      excludedLineIds={photoLineExclusions[item.id] ?? emptyExcluded}
+      onLineIncludeChange={(lineId, nowIncluded) => {
+        setPhotoLineExclusions((prev) => {
+          const cur = new Set(prev[item.id] ?? [])
+          if (nowIncluded) cur.delete(lineId)
+          else cur.add(lineId)
+          return { ...prev, [item.id]: cur }
+        })
+      }}
+      onToggle={() => {
+        const removing = photoSelected.has(item.id)
+        setPhotoSelected((prev) => toggleInSet(prev, item.id))
+        if (removing) {
+          setPhotoLineExclusions((er) => {
+            const next = { ...er }
+            delete next[item.id]
+            return next
+          })
+          setPhotoPackageOptionalAdds((pa) => {
+            const next = { ...pa }
+            delete next[item.id]
+            return next
+          })
+          setPhotoEnhanceByTier((en) => {
+            const next = { ...en }
+            delete next[item.id]
+            return next
+          })
+          setPhotoEnhanceLineExcl((exn) => {
+            const next = { ...exn }
+            delete next[item.id]
+            return next
+          })
+        }
+      }}
+    />
+  )
+
   return (
     <main
       className={`min-h-screen relative overflow-hidden text-white selection:bg-white/20 ${
@@ -1497,113 +1642,50 @@ export default function TestingPackageBuilder({
                   </div>
                 ) : null}
 
-                <ul className="space-y-4">
-                  {visiblePhotoPackages.map((item) => (
-                    <CatalogOption
-                      key={item.id}
-                      item={item}
-                      selected={photoSelected.has(item.id)}
-                      enhancementCatalog={addonCatalog}
-                      enhancementSectionTitle={addonSectionTitle}
-                      enhancementSectionSubtitle={addonSectionSubtitle}
-                      enhancementSelectedIds={
-                        photoEnhanceByTier[item.id] ?? FALLBACK_EMPTY_OPTIONAL
-                      }
-                      onAddEnhancement={(addonId) => {
-                        setPhotoEnhanceByTier((prev) => {
-                          const base = new Set(prev[item.id] ?? [])
-                          if (base.has(addonId)) return prev
-                          base.add(addonId)
-                          return { ...prev, [item.id]: base }
-                        })
-                      }}
-                      onRemoveEnhancement={(addonId) => {
-                        setPhotoEnhanceByTier((prev) => {
-                          const base = new Set(prev[item.id] ?? [])
-                          base.delete(addonId)
-                          const merged = { ...prev }
-                          if (base.size === 0) delete merged[item.id]
-                          else merged[item.id] = base
-                          return merged
-                        })
-                        setPhotoEnhanceLineExcl((nex) => {
-                          const tier = nex[item.id]
-                          if (!tier?.[addonId]) return nex
-                          const tierNext = { ...tier }
-                          delete tierNext[addonId]
-                          const merged = { ...nex }
-                          if (Object.keys(tierNext).length === 0) delete merged[item.id]
-                          else merged[item.id] = tierNext
-                          return merged
-                        })
-                      }}
-                      enhancementLineExclusionsGetter={(addonId) =>
-                        getPhotoEnhancementExcluded(item.id, addonId)
-                      }
-                      onEnhancementLineIncludeChange={(addonId, lineId, nowIncluded) => {
-                        setPhotoEnhanceLineExcl((prev) => {
-                          const tierNested = prev[item.id] ?? {}
-                          const cur = new Set(tierNested[addonId] ?? [])
-                          if (nowIncluded) cur.delete(lineId)
-                          else cur.add(lineId)
-                          return {
-                            ...prev,
-                            [item.id]: { ...tierNested, [addonId]: cur },
-                          }
-                        })
-                      }}
-                      optionalSelectedIds={
-                        photoPackageOptionalAdds[item.id] ?? FALLBACK_EMPTY_OPTIONAL
-                      }
-                      onToggleOptionalAdd={(addonId) => {
-                        setPhotoPackageOptionalAdds((prev) => {
-                          const base = new Set(prev[item.id] ?? [])
-                          return {
-                            ...prev,
-                            [item.id]: toggleInSet(base, addonId),
-                          }
-                        })
-                      }}
-                      excludedLineIds={
-                        photoLineExclusions[item.id] ?? emptyExcluded
-                      }
-                      onLineIncludeChange={(lineId, nowIncluded) => {
-                        setPhotoLineExclusions((prev) => {
-                          const cur = new Set(prev[item.id] ?? [])
-                          if (nowIncluded) cur.delete(lineId)
-                          else cur.add(lineId)
-                          return { ...prev, [item.id]: cur }
-                        })
-                      }}
-                      onToggle={() => {
-                        const removing = photoSelected.has(item.id)
-                        setPhotoSelected((prev) => toggleInSet(prev, item.id))
-                        if (removing) {
-                          setPhotoLineExclusions((er) => {
-                            const next = { ...er }
-                            delete next[item.id]
-                            return next
-                          })
-                          setPhotoPackageOptionalAdds((pa) => {
-                            const next = { ...pa }
-                            delete next[item.id]
-                            return next
-                          })
-                          setPhotoEnhanceByTier((en) => {
-                            const next = { ...en }
-                            delete next[item.id]
-                            return next
-                          })
-                          setPhotoEnhanceLineExcl((exn) => {
-                            const next = { ...exn }
-                            delete next[item.id]
-                            return next
-                          })
-                        }
-                      }}
-                    />
-                  ))}
-                </ul>
+                <ul className="space-y-4">{visiblePhotoPackages.map(renderPhotoTierItem)}</ul>
+
+                <div className="mt-5 rounded-xl border border-accent/35 bg-accent/[0.06] px-4 py-4">
+                  <p className="text-sm font-medium text-white mb-1">Photo + film together?</p>
+                  <p className="text-xs text-white/50 leading-relaxed mb-3">
+                    {photoFilmBundleOffers.length > 0
+                      ? 'Open bundled tiers for combo pricing and each inclusion — expand a card to read the details — then pair it with cinematography on the right.'
+                      : 'Tell us in your notes and we&apos;ll tailor a quote when you want photography and cinematography bundled.'}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {photoFilmBundleOffers.length > 0 ? (
+                      <button
+                        type="button"
+                        onClick={togglePhotoFilmBundlesAndScroll}
+                        className="inline-flex items-center gap-2 rounded-full border border-accent/60 bg-accent/15 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-accent hover:bg-accent/25 transition-colors"
+                      >
+                        {showPhotoFilmBundles ? 'Hide bundled tiers' : 'See bundled photo + film tiers'}
+                        <ArrowRight className="w-3.5 h-3.5" aria-hidden />
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={focusNotesField}
+                      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-wider transition-colors ${
+                        photoFilmBundleOffers.length > 0
+                          ? 'border-white/25 bg-transparent text-white/70 hover:bg-white/[0.06]'
+                          : 'border-accent/60 bg-accent/15 text-accent hover:bg-accent/25'
+                      }`}
+                    >
+                      {photoFilmBundleOffers.length > 0
+                        ? 'Custom combo — write this in notes'
+                        : 'Request a combined deal'}
+                      <ArrowRight className="w-3.5 h-3.5" aria-hidden />
+                    </button>
+                  </div>
+                  {photoFilmBundleOffers.length > 0 && showPhotoFilmBundles ? (
+                    <ul
+                      id="photo-film-bundle-list"
+                      className="mt-4 space-y-4 pt-4 border-t border-white/10"
+                    >
+                      {photoFilmBundleOffers.map(renderPhotoTierItem)}
+                    </ul>
+                  ) : null}
+                </div>
               </motion.section>
 
               <motion.section
@@ -2022,6 +2104,7 @@ export default function TestingPackageBuilder({
             )}
 
             <motion.div
+              id="package-builder-review-and-notes"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25 }}
@@ -2323,11 +2406,13 @@ export default function TestingPackageBuilder({
                   Anything else we should know?
                 </label>
                 <textarea
+                  ref={notesRef}
+                  id="package-builder-notes"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={4}
                   className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-accent resize-none"
-                  placeholder="Timeline, vibe, references…"
+                  placeholder="Timeline, vibe, references… Mention if you want a bundled photo + film quote."
                 />
               </div>
 

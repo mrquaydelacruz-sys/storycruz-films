@@ -7,6 +7,7 @@ import {
   seasonalCollectionsToCatalog,
   normalizeOptionalAddOnRowsForParent,
   photoPackagesFromPricing,
+  shouldOmitSeasonalComboFromPackageBuilder,
   videoPackagesFromPricing,
 } from '@/lib/pricing-to-package-catalog'
 import { stripHoistedEnhancementTiersFromCatalog } from '@/lib/pricing-hoist-enhancement-tiers'
@@ -410,6 +411,8 @@ export type PackageBuilderResolvedProps = {
   videoColumnTitle: string
   videoColumnSubtitle: string
   photoCatalog: PackageCatalogItem[]
+  /** Combo bundles (e.g. seasonal “Signature Combo”) surfaced after the photo+film CTA — same selection model as photography tiers */
+  photoFilmBundleOffers: PackageCatalogItem[]
   videoCatalog: PackageCatalogItem[]
   /** Optional third list – extra hour / second shooter / travel, grouped by rollup in Studio */
   addonCatalog: PackageCatalogItem[]
@@ -426,13 +429,17 @@ export type PackageBuilderResolvedProps = {
 function catalogRowsFromInvestmentPricing(pricing: PricingForPackageGroq): {
   photoGuide: PackageCatalogItem[]
   videoGuide: PackageCatalogItem[]
+  photoFilmBundleOffers: PackageCatalogItem[]
 } {
-  if (!pricing) return { photoGuide: [], videoGuide: [] }
+  if (!pricing)
+    return { photoGuide: [], videoGuide: [], photoFilmBundleOffers: [] }
+  const seasonalItems = seasonalCollectionsToCatalog(pricing.seasonalCollections)
   return {
     photoGuide: [
       ...photoPackagesFromPricing(pricing.photoPackages),
-      ...seasonalCollectionsToCatalog(pricing.seasonalCollections),
+      ...seasonalItems.filter((item) => !shouldOmitSeasonalComboFromPackageBuilder(item)),
     ],
+    photoFilmBundleOffers: seasonalItems.filter(shouldOmitSeasonalComboFromPackageBuilder),
     videoGuide: videoPackagesFromPricing(pricing.videoPackages),
   }
 }
@@ -461,15 +468,16 @@ export function resolvePackageBuilderPage({
   const loadFromGuide =
     pricing != null && (brief == null || brief.useInvestmentGuide !== false)
 
-  const { photoGuide, videoGuide } = loadFromGuide
+  const { photoGuide, videoGuide, photoFilmBundleOffers: rawPhotoFilmBundles } = loadFromGuide
     ? catalogRowsFromInvestmentPricing(pricing)
-    : { photoGuide: [], videoGuide: [] }
+    : { photoGuide: [], videoGuide: [], photoFilmBundleOffers: [] }
 
   const manualPhoto = brief ? normalizeBriefPhotoOfferings(brief.photoOfferings) : []
   const manualVideo = brief ? normalizeBriefVideoOfferings(brief.videoOfferings) : []
 
   let photoCatalog = enrichCatalogItems([...photoGuide, ...manualPhoto])
   let videoCatalog = enrichCatalogItems([...videoGuide, ...manualVideo])
+  let photoFilmBundleOffers = enrichCatalogItems(rawPhotoFilmBundles)
   let addonCatalog = brief
     ? enrichCatalogItems(normalizeAddonOfferings(brief.addonOfferings))
     : []
@@ -479,10 +487,16 @@ export function resolvePackageBuilderPage({
   photoCatalog = stripPhoto.catalog
   const stripVideo = stripHoistedEnhancementTiersFromCatalog(videoCatalog, 'cinematography')
   videoCatalog = stripVideo.catalog
+  const stripPhotoFilmBundles = stripHoistedEnhancementTiersFromCatalog(
+    photoFilmBundleOffers,
+    'photography'
+  )
+  photoFilmBundleOffers = stripPhotoFilmBundles.catalog
   addonCatalog = enrichCatalogItems([
     ...addonCatalog,
     ...stripPhoto.hoistedAddons,
     ...stripVideo.hoistedAddons,
+    ...stripPhotoFilmBundles.hoistedAddons,
   ])
 
   const preserveEmptyOfferings = strictOfferings && brief != null
@@ -564,6 +578,7 @@ export function resolvePackageBuilderPage({
     videoColumnTitle,
     videoColumnSubtitle,
     photoCatalog,
+    photoFilmBundleOffers,
     videoCatalog,
     addonCatalog,
     addonSectionTitle,

@@ -105,6 +105,15 @@ export function photoPackagesFromPricing(pkgs: unknown): PackageCatalogItem[] {
   return mapSimplePackages(pkgs, 'invest-p')
 }
 
+/**
+ * Seasonal “Signature Combo”–style rows stay on the Investment Guide, but are hidden from the
+ * interactive package builder so couples aren’t picking duplicate bundle cards—use the combined-deal
+ * CTA in the builder instead.
+ */
+export function shouldOmitSeasonalComboFromPackageBuilder(item: PackageCatalogItem): boolean {
+  return item.title.toLowerCase().includes('signature combo')
+}
+
 /** Seasonal & intimate tiers (often combos) appended under Photography — same storytelling as Investment page. */
 export function seasonalCollectionsToCatalog(seasonal: unknown): PackageCatalogItem[] {
   if (!seasonal || typeof seasonal !== 'object') return []

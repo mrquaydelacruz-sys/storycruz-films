@@ -5,7 +5,11 @@
  */
 
 import type { AddonTotalsToward, PackageCatalogItem } from '@/lib/package-catalog-types'
-import { enrichCatalogItem, getIncludedLines } from '@/lib/package-catalog-math'
+import {
+  enrichCatalogItem,
+  formatMoneySimple,
+  getIncludedLines,
+} from '@/lib/package-catalog-math'
 
 export function isHoistedEnhancementTierTitle(title: string): boolean {
   const t = title
@@ -25,7 +29,8 @@ function hoistedAddonItemsFromPseudoTier(
   if (!lines.length) return []
   const out: PackageCatalogItem[] = []
   for (let i = 0; i < lines.length; i++) {
-    const label = lines[i]!.label.trim()
+    const line = lines[i]!
+    const label = line.label.trim()
     if (!label) continue
     const colon = label.indexOf(':')
     const titlePart = (colon > 0 ? label.slice(0, colon) : label).trim()
@@ -42,6 +47,10 @@ function hoistedAddonItemsFromPseudoTier(
       addonTotalsToward,
     }
     if (priceMatch) row.price = priceMatch[0].replace(/\s+/g, ' ')
+    else if (line.removeCreditUsd > 0) {
+      /** Studio often sets `$` only via “Price reduction if removed”; hoisted addons need `price` for estimates. */
+      row.price = formatMoneySimple(line.removeCreditUsd)
+    }
     out.push(enrichCatalogItem(row))
   }
   return out
