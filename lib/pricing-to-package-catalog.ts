@@ -19,6 +19,8 @@ type SimplePackage = {
   description?: string | null
   features?: unknown
   optionalAddOns?: unknown
+  coverageHourDeductionEnabled?: boolean | null
+  coverageHourDeductionRatePerHour?: string | null
 }
 
 function coerceAddonTotalsToward(v: unknown): AddonTotalsToward | undefined {
@@ -89,6 +91,12 @@ function mapSimplePackages(pkgs: unknown, idPrefix: 'invest-v' | 'invest-p'): Pa
       defaultOptionalRollup
     )
     if (optionalAdds.length) item.optionalAddOns = optionalAdds
+
+    if (p?.coverageHourDeductionEnabled === true) {
+      item.coverageHourDeductionEnabled = true
+      const rateHr = `${p?.coverageHourDeductionRatePerHour ?? ''}`.trim()
+      if (rateHr) item.coverageHourDeductionRatePerHour = rateHr
+    }
 
     out.push(item)
   })

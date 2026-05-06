@@ -127,18 +127,60 @@ export function computePackageEstimate(
   }
 }
 
+/** Max hours a client can deduct from a single package’s coverage in the builder. */
+export const PACKAGE_BUILDER_COVERAGE_HOUR_DEDUCTION_CAP = 2
+
+export function clampCoverageHoursDeducted(raw: number): number {
+  if (!Number.isFinite(raw) || raw <= 0) return 0
+  return Math.min(
+    PACKAGE_BUILDER_COVERAGE_HOUR_DEDUCTION_CAP,
+    Math.floor(raw)
+  )
+}
+
+/** Credit (USD, pre-tax) applied when the client deducts coverage hours on a tier. */
+export function coverageHourDeductionCredit(
+  item: PackageCatalogItem,
+  rawHours: number
+): number {
+  if (!item.coverageHourDeductionEnabled) return 0
+  const h = clampCoverageHoursDeducted(rawHours)
+  if (h <= 0) return 0
+  const unit = extractFirstDollarAmount(item.coverageHourDeductionRatePerHour ?? '')
+  if (unit == null) return 0
+  return Math.round(h * unit * 100) / 100
+}
+
+export function packageSubtotalAfterCoverageHourDeduction(
+  item: PackageCatalogItem,
+  excluded: Set<string> | undefined | null,
+  rawHoursDeducted: number
+): number | null {
+  const { subtotal } = computePackageEstimate(item, excluded)
+  if (subtotal === null) return null
+  const credit = coverageHourDeductionCredit(item, rawHoursDeducted)
+  if (credit <= 0) return subtotal
+  return Math.max(0, Math.round((subtotal - credit) * 100) / 100)
+}
+
 /** Sum of numeric package estimates; skips rows without parsable `$` base price in `item.price`. */
 export function columnSubtotalEstimate(
   items: PackageCatalogItem[],
-  getExcluded: (id: string) => Set<string>
+  getExcluded: (id: string) => Set<string>,
+  getCoverageHoursDeducted?: (id: string) => number
 ): number | null {
   if (!items.length) return null
   let sum = 0
   let counted = 0
   for (const item of items) {
-    const { subtotal } = computePackageEstimate(item, getExcluded(item.id))
-    if (subtotal !== null) {
-      sum += subtotal
+    const h = getCoverageHoursDeducted?.(item.id) ?? 0
+    const adjusted = packageSubtotalAfterCoverageHourDeduction(
+      item,
+      getExcluded(item.id),
+      h
+    )
+    if (adjusted !== null) {
+      sum += adjusted
       counted++
     }
   }

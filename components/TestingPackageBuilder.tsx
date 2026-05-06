@@ -30,17 +30,21 @@ import type {
 import type { PackageIncludedLine } from '@/lib/package-catalog-types'
 import type { AddonTotalsToward } from '@/lib/package-catalog-types'
 import {
+  PACKAGE_BUILDER_COVERAGE_HOUR_DEDUCTION_CAP,
   aggregateEnhancementSelectionsTowardApprox,
   addonSubtotalTowardEstimate,
+  clampCoverageHoursDeducted,
   columnSubtotalEstimate,
   computePackageEstimate,
   countEnhancementStandaloneSelections,
+  coverageHourDeductionCredit,
   estimateQuantityLineTotal,
   extractFirstDollarAmount,
   formatMoneySimple,
   getIncludedLines,
   mergeApproxSubtotals,
   optionalAddOnSelectionsTowardApprox,
+  packageSubtotalAfterCoverageHourDeduction,
   sumOptionalAddOnSelectionsApprox,
 } from '@/lib/package-catalog-math'
 
@@ -83,6 +87,8 @@ function CatalogOption({
   onRemoveEnhancement = () => {},
   enhancementLineExclusionsGetter = () => FALLBACK_EMPTY_OPTIONAL,
   onEnhancementLineIncludeChange = () => {},
+  coverageHoursDeducted = 0,
+  onCoverageHoursChange,
 }: {
   item: PackageCatalogItem
   selected: boolean
@@ -107,6 +113,9 @@ function CatalogOption({
     lineId: string,
     nowIncluded: boolean
   ) => void
+  /** Capped by site rules; only shown when the tier enables coverage deduction in Sanity. */
+  coverageHoursDeducted?: number
+  onCoverageHoursChange?: (nextHours: number) => void
 }) {
   const [customOpen, setCustomOpen] = useState(false)
   const [openEnhCustomizeIds, setOpenEnhCustomizeIds] = useState<Set<string>>(() => new Set())
@@ -117,6 +126,23 @@ function CatalogOption({
     item,
     excludedLineIds
   )
+  const hrsNorm = clampCoverageHoursDeducted(coverageHoursDeducted ?? 0)
+  const hourCredit =
+    selected && hrsNorm > 0 ? coverageHourDeductionCredit(item, hrsNorm) : 0
+  const subtotalWithHourDeduction = packageSubtotalAfterCoverageHourDeduction(
+    item,
+    excludedLineIds,
+    coverageHoursDeducted ?? 0
+  )
+  const showCoverageHourDeduction =
+    !!(
+      selected &&
+      hasRate &&
+      item.coverageHourDeductionEnabled &&
+      extractFirstDollarAmount(item.coverageHourDeductionRatePerHour ?? '') != null &&
+      subtotal != null &&
+      onCoverageHoursChange
+    )
   const includedLinesUi = lines.filter((l) => !excludedLineIds.has(l.id))
   const togglableLines = lines.filter((l) => l.removable !== false)
 
@@ -138,9 +164,6 @@ function CatalogOption({
     if (togglableLines.length === 0) setCustomOpen(false)
   }, [togglableLines.length])
 
-  const showCustomizeEstimate =
-    selected && subtotal != null && base != null && credits > 0
-
   const optionalAdds = item.optionalAddOns ?? []
   const hasOptionalAdds = optionalAdds.length > 0
   const optionalApprox = selected
@@ -148,7 +171,12 @@ function CatalogOption({
     : null
   const enhancementDropdown = !!(enhancementCatalog?.length && selected)
   const showCardDetail =
-    selected && (hasRate || lines.length > 0 || hasOptionalAdds || enhancementDropdown)
+    selected &&
+    (hasRate ||
+      lines.length > 0 ||
+      hasOptionalAdds ||
+      enhancementDropdown ||
+      showCoverageHourDeduction)
 
   return (
     <li>
@@ -202,18 +230,41 @@ function CatalogOption({
                 {hasRate && (
                   <div className="space-y-1 pt-4">
                     <p className="text-sm font-medium text-accent tabular-nums">{item.price}</p>
-                    {showCustomizeEstimate && (
-                      <p className="text-xs text-white/55 tabular-nums">
-                        Your customized estimate:{' '}
-                        <span className="text-accent font-medium">
-                          {formatMoneySimple(subtotal)}
-                        </span>{' '}
-                        ({formatMoneySimple(credits)} off list price —{' '}
-                        {equalSharePerLine != null
-                          ? 'equal amount per removable line you uncheck'
-                          : 'per-line deductions where each line has a set amount, or amounts in ($…) on bullets'})
-                      </p>
-                    )}
+                    {selected &&
+                    subtotalWithHourDeduction != null &&
+                    base != null &&
+                    (credits > 0 || hourCredit > 0) ? (
+                      <div className="text-xs text-white/55 tabular-nums space-y-1">
+                        <p>
+                          Customized tier estimate (pre-tax):{' '}
+                          <span className="text-accent font-medium">
+                            {formatMoneySimple(subtotalWithHourDeduction)}
+                          </span>
+                        </p>
+                        {credits > 0 ? (
+                          <p className="text-[11px] text-white/45 leading-snug">
+                            Unchecked lines credit{' '}
+                            <span className="text-white/55">{formatMoneySimple(credits)}</span> off list
+                            {equalSharePerLine != null
+                              ? ' (equal amount per removable line)'
+                              : ' (per-bullet amounts or ($…) cues)'}
+                            .
+                          </p>
+                        ) : null}
+                        {hourCredit > 0 ? (
+                          <p className="text-[11px] text-white/45 leading-snug">
+                            Reducing coverage by{' '}
+                            <span className="text-white/55">{hrsNorm}</span> hour
+                            {hrsNorm === 1 ? '' : 's'} trims{' '}
+                            <span className="text-white/55">{formatMoneySimple(hourCredit)}</span>{' '}
+                            (<span className="tabular-nums">
+                              {item.coverageHourDeductionRatePerHour?.trim()}
+                            </span>
+                            ).
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
                     {typeof optionalApprox === 'number' && optionalApprox > 0 ? (
                       <p className="text-xs text-white/50 tabular-nums mt-1">
                         + optional upgrades checked:{' '}
@@ -427,6 +478,60 @@ function CatalogOption({
                         )
                       })}
                     </ul>
+                  </div>
+                ) : null}
+
+                {showCoverageHourDeduction ? (
+                  <div className="pt-5 border-t border-white/10">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-sky-200/85 mb-2">
+                      Coverage deduction (optional)
+                    </p>
+                    <p className="text-[11px] text-white/45 mb-4 leading-snug">
+                      Fewer onsite hours than this package&apos;s standard offering. Choose up to{' '}
+                      {PACKAGE_BUILDER_COVERAGE_HOUR_DEDUCTION_CAP} hours—the estimate subtracts{' '}
+                      <span className="text-white/60 tabular-nums">
+                        {item.coverageHourDeductionRatePerHour?.trim()}
+                      </span>{' '}
+                      per hour deducted (same rule as extras when you shorten coverage).
+                    </p>
+                    <div className="flex flex-wrap items-center gap-4">
+                      <span className="text-sm text-white/70">Hours to deduct</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          className="h-10 w-10 rounded-lg border border-white/20 bg-white/5 text-white flex items-center justify-center hover:bg-white/10 disabled:opacity-30"
+                          aria-label="Deduct fewer hours"
+                          disabled={hrsNorm <= 0}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onCoverageHoursChange!(
+                              clampCoverageHoursDeducted(hrsNorm - 1)
+                            )
+                          }}
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="min-w-[3rem] text-center text-lg font-medium tabular-nums">
+                          {hrsNorm}
+                        </span>
+                        <button
+                          type="button"
+                          className="h-10 w-10 rounded-lg border border-sky-500/45 bg-sky-500/15 text-sky-100 flex items-center justify-center hover:bg-sky-500/25 disabled:opacity-30"
+                          aria-label="Deduct more hours"
+                          disabled={hrsNorm >= PACKAGE_BUILDER_COVERAGE_HOUR_DEDUCTION_CAP}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onCoverageHoursChange!(
+                              clampCoverageHoursDeducted(hrsNorm + 1)
+                            )
+                          }}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 ) : null}
 
@@ -767,7 +872,8 @@ function enhancementsToPayloadRows(
 function buildCatalogSelectionPayload(
   item: PackageCatalogItem,
   excluded?: Set<string>,
-  optionalSelected?: Set<string>
+  optionalSelected?: Set<string>,
+  coverageHoursDeducted = 0
 ): Record<string, unknown> {
   const lines = getIncludedLines(item)
   const ex = excluded ?? new Set<string>()
@@ -777,7 +883,9 @@ function buildCatalogSelectionPayload(
   const removed = lines
     .filter((l) => l.removable !== false && ex.has(l.id))
     .map((l) => l.label)
-  const { subtotal } = computePackageEstimate(item, ex)
+  const hrs = clampCoverageHoursDeducted(coverageHoursDeducted)
+  const subtotalAdjusted = packageSubtotalAfterCoverageHourDeduction(item, ex, hrs)
+  const hourCred = hrs > 0 ? coverageHourDeductionCredit(item, hrs) : 0
   const price = item.price?.trim()
 
   const optSel = optionalSelected ?? new Set<string>()
@@ -795,15 +903,27 @@ function buildCatalogSelectionPayload(
       return row
     })
 
+  const rateTrim = item.coverageHourDeductionRatePerHour?.trim()
+
   return {
     packageId: item.id,
     title: item.title.trim(),
     ...(price ? { price } : {}),
     ...(retained.length ? { included: retained } : {}),
     ...(removed.length ? { removedLines: removed } : {}),
-    ...(typeof subtotal === 'number' ? { estimatedSubtotal: subtotal } : {}),
+    ...(typeof subtotalAdjusted === 'number' ? { estimatedSubtotal: subtotalAdjusted } : {}),
     ...(item.addonTotalsToward ? { addonTotalsToward: item.addonTotalsToward } : {}),
     ...(optionalSelections.length ? { optionalSelections } : {}),
+    ...(hrs > 0 &&
+    item.coverageHourDeductionEnabled &&
+    hourCred > 0 &&
+    rateTrim?.length
+      ? {
+          coverageHoursDeducted: hrs,
+          coverageHourDeductionRatePerHour: rateTrim,
+          coverageHourDeductionCreditUsd: hourCred,
+        }
+      : {}),
   }
 }
 
@@ -890,6 +1010,13 @@ export default function TestingPackageBuilder({
   >({})
   const [videoPackageOptionalAdds, setVideoPackageOptionalAdds] = useState<
     Record<string, Set<string>>
+  >({})
+  /** Per tier id — photography + Photo + film bundles share this map (`photoSelected`). */
+  const [photoCoverageHourDeduction, setPhotoCoverageHourDeduction] = useState<
+    Record<string, number>
+  >({})
+  const [videoCoverageHourDeduction, setVideoCoverageHourDeduction] = useState<
+    Record<string, number>
   >({})
 
   const emptyExcluded = useMemo(() => new Set<string>(), [])
@@ -1023,16 +1150,22 @@ export default function TestingPackageBuilder({
     return picked
   }, [builderVariables, variablePickSelections])
 
-  const photoApproxSubtotal = columnSubtotalEstimate(selectedPhotoOnlyItems, (id) => {
-    return photoLineExclusions[id] ?? emptyExcluded
-  })
-  const videoApproxSubtotal = columnSubtotalEstimate(selectedVideoItems, (id) => {
-    return videoLineExclusions[id] ?? emptyExcluded
-  })
+  const photoApproxSubtotal = columnSubtotalEstimate(
+    selectedPhotoOnlyItems,
+    (id) => photoLineExclusions[id] ?? emptyExcluded,
+    (id) => photoCoverageHourDeduction[id] ?? 0
+  )
+  const videoApproxSubtotal = columnSubtotalEstimate(
+    selectedVideoItems,
+    (id) => videoLineExclusions[id] ?? emptyExcluded,
+    (id) => videoCoverageHourDeduction[id] ?? 0
+  )
 
-  const photoFilmApproxSubtotal = columnSubtotalEstimate(selectedPhotoFilmBundleItems, (id) => {
-    return photoLineExclusions[id] ?? emptyExcluded
-  })
+  const photoFilmApproxSubtotal = columnSubtotalEstimate(
+    selectedPhotoFilmBundleItems,
+    (id) => photoLineExclusions[id] ?? emptyExcluded,
+    (id) => photoCoverageHourDeduction[id] ?? 0
+  )
 
   const enhPhoto_photo = aggregateEnhancementSelectionsTowardApprox(
     selectedPhotoOnlyItems,
@@ -1373,7 +1506,8 @@ export default function TestingPackageBuilder({
             const base = buildCatalogSelectionPayload(
               item,
               photoLineExclusions[item.id],
-              photoPackageOptionalAdds[item.id]
+              photoPackageOptionalAdds[item.id],
+              photoCoverageHourDeduction[item.id] ?? 0
             )
             return enhRows.length ? { ...base, alacarteSelections: enhRows } : base
           }),
@@ -1386,7 +1520,8 @@ export default function TestingPackageBuilder({
             const base = buildCatalogSelectionPayload(
               item,
               photoLineExclusions[item.id],
-              photoPackageOptionalAdds[item.id]
+              photoPackageOptionalAdds[item.id],
+              photoCoverageHourDeduction[item.id] ?? 0
             )
             return enhRows.length ? { ...base, alacarteSelections: enhRows } : base
           }),
@@ -1399,7 +1534,8 @@ export default function TestingPackageBuilder({
             const base = buildCatalogSelectionPayload(
               item,
               videoLineExclusions[item.id],
-              videoPackageOptionalAdds[item.id]
+              videoPackageOptionalAdds[item.id],
+              videoCoverageHourDeduction[item.id] ?? 0
             )
             return enhRows.length ? { ...base, alacarteSelections: enhRows } : base
           }),
@@ -1539,6 +1675,13 @@ export default function TestingPackageBuilder({
           return { ...prev, [item.id]: cur }
         })
       }}
+      coverageHoursDeducted={photoCoverageHourDeduction[item.id] ?? 0}
+      onCoverageHoursChange={(next) =>
+        setPhotoCoverageHourDeduction((prev) => ({
+          ...prev,
+          [item.id]: clampCoverageHoursDeducted(next),
+        }))
+      }
       onToggle={() => {
         const removing = photoSelected.has(item.id)
         setPhotoSelected((prev) => toggleInSet(prev, item.id))
@@ -1560,6 +1703,11 @@ export default function TestingPackageBuilder({
           })
           setPhotoEnhanceLineExcl((exn) => {
             const next = { ...exn }
+            delete next[item.id]
+            return next
+          })
+          setPhotoCoverageHourDeduction((hr) => {
+            const next = { ...hr }
             delete next[item.id]
             return next
           })
@@ -1915,6 +2063,13 @@ export default function TestingPackageBuilder({
                           return { ...prev, [item.id]: cur }
                         })
                       }}
+                      coverageHoursDeducted={videoCoverageHourDeduction[item.id] ?? 0}
+                      onCoverageHoursChange={(next) =>
+                        setVideoCoverageHourDeduction((prev) => ({
+                          ...prev,
+                          [item.id]: clampCoverageHoursDeducted(next),
+                        }))
+                      }
                       onToggle={() => {
                         const removing = videoSelected.has(item.id)
                         setVideoSelected((prev) => toggleInSet(prev, item.id))
@@ -1936,6 +2091,11 @@ export default function TestingPackageBuilder({
                           })
                           setVideoEnhanceLineExcl((exn) => {
                             const next = { ...exn }
+                            delete next[item.id]
+                            return next
+                          })
+                          setVideoCoverageHourDeduction((hr) => {
+                            const next = { ...hr }
                             delete next[item.id]
                             return next
                           })
@@ -2207,7 +2367,9 @@ export default function TestingPackageBuilder({
                   Figures here are <span className="text-white/60">ballpark estimates</span> before
                   tax (GST not included). We take the first <span className="text-white/60">$</span>{' '}
                   amount in each package or line where shown. Unchecking optional lines may lower the
-                  package estimate when those lines carry a credit. Enhancements you add from the
+                  package estimate when those lines carry a credit. Where a tier allows it, you may also
+                  deduct up to {PACKAGE_BUILDER_COVERAGE_HOUR_DEDUCTION_CAP} coverage hours (credit per
+                  hour is set on that listing). Enhancements you add from the
                   dropdown roll into the photography column, cinematography column,{' '}
                   <span className="text-white/60">photo + film bundles</span> (when listed), or the
                   combined total depending on each item&apos;s rollup. Optional quantity fields multiply

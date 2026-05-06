@@ -62,6 +62,23 @@ export default defineType({
       of: [{ type: 'packageOptionalAddOn' }],
     }),
     defineField({
+      name: 'coverageHourDeductionEnabled',
+      title: 'Package builder — allow deducting coverage hours',
+      type: 'boolean',
+      initialValue: false,
+      description:
+        'Shows a 0–2 hrs deduction control on selected tiers; each hour trims the estimate by the credit below.',
+    }),
+    defineField({
+      name: 'coverageHourDeductionRatePerHour',
+      title: 'Credit per deducted hour',
+      type: 'string',
+      placeholder: '$350/hr + GST',
+      description:
+        'First $amount is used as the per-hour deduction from this tier list estimate (often match your extra-hour rate).',
+      hidden: ({ parent }) => !parent?.coverageHourDeductionEnabled,
+    }),
+    defineField({
       name: 'included',
       title: 'What’s included',
       type: 'array',

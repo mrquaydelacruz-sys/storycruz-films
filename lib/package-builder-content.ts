@@ -215,6 +215,8 @@ type SanityOfferingRow = {
   _key?: string | null
   addonTotalsToward?: string | null
   optionalPackageAddOns?: unknown[] | null
+  coverageHourDeductionEnabled?: boolean | null
+  coverageHourDeductionRatePerHour?: string | null
 }
 
 export type SanityPackageVariableGroqRow = {
@@ -306,6 +308,12 @@ function rowToCatalogItem(
     optionalRollupFallback
   )
   if (pkgOptional.length) item.optionalAddOns = pkgOptional
+
+  if (row.coverageHourDeductionEnabled === true) {
+    item.coverageHourDeductionEnabled = true
+    const rateHr = `${row.coverageHourDeductionRatePerHour ?? ''}`.trim()
+    if (rateHr) item.coverageHourDeductionRatePerHour = rateHr
+  }
 
   return item
 }

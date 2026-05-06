@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { estimateQuantityLineTotal, extractFirstDollarAmount } from '@/lib/package-catalog-math'
+import {
+  clampCoverageHoursDeducted,
+  estimateQuantityLineTotal,
+  extractFirstDollarAmount,
+} from '@/lib/package-catalog-math'
 
 /**
  * Package builder POST handler — forwards to Cruz Control CRM at
@@ -53,6 +57,10 @@ type Selection = {
   optionalSelections?: NestedPackageOptional[]
   /** Enhancements chosen from À la carte list via tier dropdown. */
   alacarteSelections?: NestedPackageOptional[]
+  /** Coverage hours the client deducted (builder cap enforced server-side). */
+  coverageHoursDeducted?: number
+  coverageHourDeductionRatePerHour?: string
+  coverageHourDeductionCreditUsd?: number
 }
 
 function formatMoneyBrief(n: number): string {
@@ -326,6 +334,26 @@ function normalizeSelections(raw: unknown): Selection[] {
         o.alacarteSelections ?? o.alacarte_selections
       )
 
+      const covRaw =
+        o.coverageHoursDeducted ?? o.coverage_hours_deducted ?? undefined
+      let coverageHoursDeducted: number | undefined
+      if (typeof covRaw === 'number' && Number.isFinite(covRaw)) {
+        const c = clampCoverageHoursDeducted(covRaw)
+        if (c > 0) coverageHoursDeducted = c
+      }
+      const rateStr =
+        typeof o.coverageHourDeductionRatePerHour === 'string'
+          ? o.coverageHourDeductionRatePerHour.trim()
+          : typeof o.coverage_hour_deduction_rate_per_hour === 'string'
+            ? String(o.coverage_hour_deduction_rate_per_hour).trim()
+            : ''
+      const creditRaw =
+        o.coverageHourDeductionCreditUsd ?? o.coverage_hour_deduction_credit_usd
+      let coverageHourDeductionCreditUsd: number | undefined
+      if (typeof creditRaw === 'number' && Number.isFinite(creditRaw) && creditRaw > 0) {
+        coverageHourDeductionCreditUsd = Math.round(creditRaw * 100) / 100
+      }
+
       return [
         {
           ...(pkgId ? { packageId: pkgId } : {}),
@@ -337,6 +365,15 @@ function normalizeSelections(raw: unknown): Selection[] {
           ...(addonToward ? { addonTotalsToward: addonToward } : {}),
           ...(optRows.length ? { optionalSelections: optRows } : {}),
           ...(acRows.length ? { alacarteSelections: acRows } : {}),
+          ...(typeof coverageHoursDeducted === 'number'
+            ? {
+                coverageHoursDeducted,
+                ...(rateStr.length ? { coverageHourDeductionRatePerHour: rateStr } : {}),
+                ...(typeof coverageHourDeductionCreditUsd === 'number'
+                  ? { coverageHourDeductionCreditUsd }
+                  : {}),
+              }
+            : {}),
         },
       ]
     }
@@ -356,6 +393,16 @@ function formatSelectionLines(selections: Selection[]): string {
         lines.push(
           `    Customized estimate (builder, pre-tax): ${formatMoneyBrief(s.estimatedSubtotal)}`
         )
+      }
+      if (typeof s.coverageHoursDeducted === 'number' && s.coverageHoursDeducted > 0) {
+        const bits = [`    Coverage deduction: −${s.coverageHoursDeducted} hr`]
+        if (s.coverageHourDeductionRatePerHour?.trim()) {
+          bits.push(` @ ${s.coverageHourDeductionRatePerHour.trim()}`)
+        }
+        if (typeof s.coverageHourDeductionCreditUsd === 'number') {
+          bits.push(` (≈ ${formatMoneyBrief(s.coverageHourDeductionCreditUsd)} pre-tax)`)
+        }
+        lines.push(bits.join(''))
       }
       if (s.addonTotalsToward) {
         const rollupLabel =

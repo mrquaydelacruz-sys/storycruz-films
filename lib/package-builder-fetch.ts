@@ -11,22 +11,22 @@ export const PACKAGE_BUILDER_BRIEF_QUERY = `
   photoColumnSubtitle,
   videoColumnTitle,
   videoColumnSubtitle,
-  photoOfferings[]{ _key, key, title, description, price, included,
+  photoOfferings[]{ _key, key, title, description, price, coverageHourDeductionEnabled, coverageHourDeductionRatePerHour, included,
     optionalPackageAddOns[]{ key, title, description, price, addonTotalsToward }
   },
-  videoOfferings[]{ _key, key, title, description, price, included,
+  videoOfferings[]{ _key, key, title, description, price, coverageHourDeductionEnabled, coverageHourDeductionRatePerHour, included,
     optionalPackageAddOns[]{ key, title, description, price, addonTotalsToward }
   },
   includeHiddenPricingPhotoFilmBundles,
   photoFilmSectionTitle,
   photoFilmSectionSubtitle,
   photoFilmSectionIntro,
-  photoFilmOfferings[]{ _key, key, title, description, price, included,
+  photoFilmOfferings[]{ _key, key, title, description, price, coverageHourDeductionEnabled, coverageHourDeductionRatePerHour, included,
     optionalPackageAddOns[]{ key, title, description, price, addonTotalsToward }
   },
   addonSectionTitle,
   addonSectionSubtitle,
-  addonOfferings[]{ _key, key, title, description, price, included, addonTotalsToward },
+  addonOfferings[]{ _key, key, title, description, price, coverageHourDeductionEnabled, coverageHourDeductionRatePerHour, included, addonTotalsToward },
   variablesSectionTitle,
   variablesSectionSubtitle,
   packageVariables[]{
@@ -42,7 +42,7 @@ export const PACKAGE_BUILDER_BRIEF_QUERY = `
     pricePerUnit,
     quantityTotalsToward,
     pickAllowMultiple,
-    pickOptions[]{ _key, key, title, description, price, included, addonTotalsToward }
+    pickOptions[]{ _key, key, title, description, price, coverageHourDeductionEnabled, coverageHourDeductionRatePerHour, included, addonTotalsToward }
   },
   useInvestmentGuide,
   investmentPricingSlug

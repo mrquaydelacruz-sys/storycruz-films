@@ -50,4 +50,13 @@ export type PackageCatalogItem = {
    * Clients check these to include them—not the same flow as removable “what’s included” lines.
    */
   optionalAddOns?: PackageOptionalAddOn[]
+  /**
+   * When enabled in Sanity, the builder shows optional coverage deduction (capped per site rules).
+   */
+  coverageHourDeductionEnabled?: boolean
+  /**
+   * Shown beside the stepper; the first `$` figure is the per-hour credit off the package estimate
+   * (e.g. `$350/hr + GST`).
+   */
+  coverageHourDeductionRatePerHour?: string | null
 }

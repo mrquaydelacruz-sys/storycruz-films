@@ -59,6 +59,22 @@ export default defineType({
               'Adds a “want this too?” checklist on this tier’s card — e.g. extra hour, dual lead, RAW. First $amount is totaled.',
             of: [{ type: 'packageOptionalAddOn' }],
           },
+          {
+            name: 'coverageHourDeductionEnabled',
+            title: 'Package builder — allow deducting coverage hours',
+            type: 'boolean',
+            initialValue: false,
+            description:
+              '0–2 hr stepper when selected; each hour reduces the tier estimate using the credit string below.',
+          },
+          {
+            name: 'coverageHourDeductionRatePerHour',
+            title: 'Credit per deducted hour',
+            type: 'string',
+            placeholder: '$400/hr + GST',
+            description: 'Video: first $figure = hourly credit off list when clients reduce coverage.',
+            hidden: ({ parent }) => !parent?.coverageHourDeductionEnabled,
+          },
         ]
       }]
     }),
@@ -92,6 +108,22 @@ export default defineType({
             description:
               'Adds a “want this too?” checklist on this collection card (extra shooters, RAW, rehearsal, …). First $ totaled.',
             of: [{ type: 'packageOptionalAddOn' }],
+          },
+          {
+            name: 'coverageHourDeductionEnabled',
+            title: 'Package builder — allow deducting coverage hours',
+            type: 'boolean',
+            initialValue: false,
+            description:
+              '0–2 hr stepper when selected; each hour reduces the tier estimate using the credit string below.',
+          },
+          {
+            name: 'coverageHourDeductionRatePerHour',
+            title: 'Credit per deducted hour',
+            type: 'string',
+            placeholder: '$350/hr + GST',
+            description: 'Photo: first $figure = hourly credit off list when clients reduce coverage.',
+            hidden: ({ parent }) => !parent?.coverageHourDeductionEnabled,
           },
         ]
       }]

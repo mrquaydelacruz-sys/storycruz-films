@@ -6,8 +6,8 @@ const QUERY = `
 *[_type == "pricing" && slug.current == $slug][0]{
   title,
   "heroVideoUrl": heroVideo.asset->url,
-  videoPackages[]{ name, price, description, features, optionalAddOns[]{ key, title, description, price, addonTotalsToward } },
-  photoPackages[]{ name, price, description, features, optionalAddOns[]{ key, title, description, price, addonTotalsToward } },
+  videoPackages[]{ name, price, description, coverageHourDeductionEnabled, coverageHourDeductionRatePerHour, features, optionalAddOns[]{ key, title, description, price, addonTotalsToward } },
+  photoPackages[]{ name, price, description, coverageHourDeductionEnabled, coverageHourDeductionRatePerHour, features, optionalAddOns[]{ key, title, description, price, addonTotalsToward } },
   seasonalCollections
 }
 `
