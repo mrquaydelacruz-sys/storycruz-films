@@ -19,8 +19,11 @@ import {
   SlidersHorizontal,
   List,
   Layers,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
 import BackgroundWater from '@/components/BackgroundWater'
+import FAQSection from '@/components/FAQSection'
 import InvestmentGuideHero from '@/components/InvestmentGuideHero'
 import type {
   PackageBuilderResolvedProps,
@@ -951,6 +954,7 @@ export default function TestingPackageBuilder({
   variablesSectionSubtitle,
   useInvestmentStyleHero = false,
   heroVideoSrc = null,
+  faqs = [],
   submissionSlug = null,
 }: TestingPackageBuilderProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -964,6 +968,7 @@ export default function TestingPackageBuilder({
   const [eventDate, setEventDate] = useState('')
   const [location, setLocation] = useState('')
   const [notes, setNotes] = useState('')
+  const [showFaqs, setShowFaqs] = useState(false)
   const notesRef = useRef<HTMLTextAreaElement>(null)
 
   const [photoSelected, setPhotoSelected] = useState<Set<string>>(new Set())
@@ -2926,6 +2931,43 @@ export default function TestingPackageBuilder({
               </div>
             </motion.div>
           </form>
+
+          {faqs.length > 0 ? (
+            <section className="mt-10">
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setShowFaqs((v) => !v)}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-white/80 transition-colors hover:bg-white/10 hover:border-white/30"
+                >
+                  {showFaqs ? (
+                    <>
+                      Collapse FAQs
+                      <ChevronUp className="w-4 h-4" />
+                    </>
+                  ) : (
+                    <>
+                      View FAQs
+                      <ChevronDown className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </div>
+              <AnimatePresence initial={false}>
+                {showFaqs ? (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                    className="overflow-hidden"
+                  >
+                    <FAQSection faqs={faqs} />
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
+            </section>
+          ) : null}
 
           <p className="text-center mt-10 text-white/40 text-sm">
             We typically respond within 24–48 hours

@@ -8,7 +8,8 @@ const QUERY = `
   "heroVideoUrl": heroVideo.asset->url,
   videoPackages[]{ name, price, description, coverageHourDeductionEnabled, coverageHourDeductionRatePerHour, features, optionalAddOns[]{ key, title, description, price, addonTotalsToward } },
   photoPackages[]{ name, price, description, coverageHourDeductionEnabled, coverageHourDeductionRatePerHour, features, optionalAddOns[]{ key, title, description, price, addonTotalsToward } },
-  seasonalCollections
+  seasonalCollections,
+  faqs[]{ category, question, answer }
 }
 `
 

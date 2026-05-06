@@ -29,6 +29,11 @@ export type PricingForPackageGroq = {
   videoPackages?: unknown
   photoPackages?: unknown
   seasonalCollections?: unknown
+  faqs?: Array<{
+    category?: string | null
+    question?: string | null
+    answer?: string | null
+  }> | null
 } | null
 
 /** Default copy used when Sanity has no doc yet or a field is left blank where noted. */
@@ -459,6 +464,7 @@ export type PackageBuilderResolvedProps = {
   /** Matches /investment hero (video backdrop + headline from Hidden Pricing). */
   useInvestmentStyleHero: boolean
   heroVideoSrc: string | null
+  faqs: Array<{ category: string; question: string; answer: string }>
 }
 
 function catalogRowsFromInvestmentPricing(pricing: PricingForPackageGroq): {
@@ -579,6 +585,15 @@ export function resolvePackageBuilderPage({
       ? pricing.heroVideoUrl.trim()
       : ''
   const heroVideoSrc = rawHero.length > 0 ? rawHero : null
+  const faqs = loadFromGuide
+    ? (pricing?.faqs ?? [])
+        .map((row) => ({
+          category: `${row?.category ?? ''}`.trim(),
+          question: `${row?.question ?? ''}`.trim(),
+          answer: `${row?.answer ?? ''}`.trim(),
+        }))
+        .filter((row) => row.question.length > 0 && row.answer.length > 0)
+    : []
 
   let eyebrow: string | null
   let title: string
@@ -653,5 +668,6 @@ export function resolvePackageBuilderPage({
     variablesSectionSubtitle,
     useInvestmentStyleHero,
     heroVideoSrc: heroVideoSrc || null,
+    faqs,
   }
 }
