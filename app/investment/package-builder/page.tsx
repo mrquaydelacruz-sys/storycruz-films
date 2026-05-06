@@ -8,7 +8,11 @@ import { DEFAULT_INVESTMENT_GUIDE_SLUG } from '@/lib/pricing-to-package-catalog'
 /** Sanity `packageBuilderBrief` slug for the public page at `/investment/package-builder`. */
 const PUBLIC_BUILDER_BRIEF_SLUG = 'package-builder'
 
-export const revalidate = 60
+/**
+ * Sanity / Hidden Pricing edits should show up without waiting on ISR windows.
+ * (Previously `revalidate = 60` could serve stale package lists for ~1+ minutes.)
+ */
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Build your package | Story Cruz Films',

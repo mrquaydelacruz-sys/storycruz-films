@@ -6,7 +6,8 @@ import { resolvePackageBuilderPage } from '@/lib/package-builder-content'
 import { fetchInvestmentPricingForPackage } from '@/lib/package-builder-fetch-pricing'
 import { DEFAULT_INVESTMENT_GUIDE_SLUG } from '@/lib/pricing-to-package-catalog'
 
-export const revalidate = 60
+/** Client share links mirror live Studio content (brief + Hidden Pricing slug). */
+export const dynamic = 'force-dynamic'
 
 type PageProps = { params: Promise<{ slug: string }> }
 

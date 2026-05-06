@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   },
 }
 
-export const revalidate = 60
+export const dynamic = 'force-dynamic'
 
 /** Optional brief slug `sandbox` — same shape as client `/package/[slug]` links (noindex QA route). */
 const SANDBOX_SLUG = 'sandbox'
