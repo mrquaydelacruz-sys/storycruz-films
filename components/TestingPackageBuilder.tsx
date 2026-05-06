@@ -939,6 +939,11 @@ export default function TestingPackageBuilder({
     return n
   }, [photoFilmBundleOffers, photoSelected])
 
+  const photoFilmBundleIdSet = useMemo(
+    () => new Set(photoFilmBundleOffers.map((i) => i.id)),
+    [photoFilmBundleOffers]
+  )
+
   /** Core guide rows (`pricing.photoPackages` + brief) — excludes `invest-season-*` appendix. */
   const photoCatalogCollections = useMemo(
     () => photoCatalog.filter((i) => !i.id.startsWith('invest-season-')),
@@ -985,6 +990,14 @@ export default function TestingPackageBuilder({
   }, [photoCatalog, photoFilmBundleOffers])
 
   const selectedPhotoItems = photoCatalogForSelections.filter((i) => photoSelected.has(i.id))
+  const selectedPhotoOnlyItems = useMemo(
+    () => selectedPhotoItems.filter((i) => !photoFilmBundleIdSet.has(i.id)),
+    [selectedPhotoItems, photoFilmBundleIdSet]
+  )
+  const selectedPhotoFilmBundleItems = useMemo(
+    () => selectedPhotoItems.filter((i) => photoFilmBundleIdSet.has(i.id)),
+    [selectedPhotoItems, photoFilmBundleIdSet]
+  )
   const selectedVideoItems = videoCatalog.filter((i) => videoSelected.has(i.id))
   const getPhotoEnhancementExcluded = (
     tierId: string,
@@ -1010,29 +1023,55 @@ export default function TestingPackageBuilder({
     return picked
   }, [builderVariables, variablePickSelections])
 
-  const photoApproxSubtotal = columnSubtotalEstimate(selectedPhotoItems, (id) => {
+  const photoApproxSubtotal = columnSubtotalEstimate(selectedPhotoOnlyItems, (id) => {
     return photoLineExclusions[id] ?? emptyExcluded
   })
   const videoApproxSubtotal = columnSubtotalEstimate(selectedVideoItems, (id) => {
     return videoLineExclusions[id] ?? emptyExcluded
   })
 
+  const photoFilmApproxSubtotal = columnSubtotalEstimate(selectedPhotoFilmBundleItems, (id) => {
+    return photoLineExclusions[id] ?? emptyExcluded
+  })
+
   const enhPhoto_photo = aggregateEnhancementSelectionsTowardApprox(
-    selectedPhotoItems,
+    selectedPhotoOnlyItems,
     photoEnhanceByTier,
     photoEnhanceLineExcl,
     addonCatalog,
     'photography'
   )
   const enhPhoto_cinema = aggregateEnhancementSelectionsTowardApprox(
-    selectedPhotoItems,
+    selectedPhotoOnlyItems,
     photoEnhanceByTier,
     photoEnhanceLineExcl,
     addonCatalog,
     'cinematography'
   )
   const enhPhoto_standalone = aggregateEnhancementSelectionsTowardApprox(
-    selectedPhotoItems,
+    selectedPhotoOnlyItems,
+    photoEnhanceByTier,
+    photoEnhanceLineExcl,
+    addonCatalog,
+    'standalone'
+  )
+
+  const enhPhotoFilm_photo = aggregateEnhancementSelectionsTowardApprox(
+    selectedPhotoFilmBundleItems,
+    photoEnhanceByTier,
+    photoEnhanceLineExcl,
+    addonCatalog,
+    'photography'
+  )
+  const enhPhotoFilm_cinema = aggregateEnhancementSelectionsTowardApprox(
+    selectedPhotoFilmBundleItems,
+    photoEnhanceByTier,
+    photoEnhanceLineExcl,
+    addonCatalog,
+    'cinematography'
+  )
+  const enhPhotoFilm_standalone = aggregateEnhancementSelectionsTowardApprox(
+    selectedPhotoFilmBundleItems,
     photoEnhanceByTier,
     photoEnhanceLineExcl,
     addonCatalog,
@@ -1086,9 +1125,24 @@ export default function TestingPackageBuilder({
   )
 
   const pkgOptPhotoPart = optionalAddOnSelectionsTowardApprox(
-    selectedPhotoItems,
+    selectedPhotoOnlyItems,
     photoPackageOptionalAdds,
     'photography'
+  )
+  const pkgOptPhotoFilmPhoto = optionalAddOnSelectionsTowardApprox(
+    selectedPhotoFilmBundleItems,
+    photoPackageOptionalAdds,
+    'photography'
+  )
+  const pkgOptPhotoFilmCinema = optionalAddOnSelectionsTowardApprox(
+    selectedPhotoFilmBundleItems,
+    photoPackageOptionalAdds,
+    'cinematography'
+  )
+  const pkgOptPhotoFilmStandalone = optionalAddOnSelectionsTowardApprox(
+    selectedPhotoFilmBundleItems,
+    photoPackageOptionalAdds,
+    'standalone'
   )
   const pkgOptVideoPart = optionalAddOnSelectionsTowardApprox(
     selectedVideoItems,
@@ -1096,7 +1150,7 @@ export default function TestingPackageBuilder({
     'cinematography'
   )
   const pkgOptStandalonePhoto = optionalAddOnSelectionsTowardApprox(
-    selectedPhotoItems,
+    selectedPhotoOnlyItems,
     photoPackageOptionalAdds,
     'standalone'
   )
@@ -1120,6 +1174,19 @@ export default function TestingPackageBuilder({
     ),
     pkgOptPhotoPart
   )
+
+  const photoFilmExtrasMerged = mergeApproxSubtotals(
+    mergeApproxSubtotals(
+      mergeApproxSubtotals(enhPhotoFilm_photo, enhPhotoFilm_cinema),
+      enhPhotoFilm_standalone
+    ),
+    mergeApproxSubtotals(
+      mergeApproxSubtotals(pkgOptPhotoFilmPhoto, pkgOptPhotoFilmCinema),
+      pkgOptPhotoFilmStandalone
+    )
+  )
+
+  const photoFilmMergedApprox = mergeApproxSubtotals(photoFilmApproxSubtotal, photoFilmExtrasMerged)
   const videoMergedApprox = mergeApproxSubtotals(
     mergeApproxSubtotals(
       mergeApproxSubtotals(
@@ -1143,13 +1210,19 @@ export default function TestingPackageBuilder({
   )
 
   const combinedApproxSubtotal =
-    photoMergedApprox != null || videoMergedApprox != null || standaloneEstimated != null
-      ? (photoMergedApprox ?? 0) + (videoMergedApprox ?? 0) + (standaloneEstimated ?? 0)
+    photoMergedApprox != null ||
+    videoMergedApprox != null ||
+    standaloneEstimated != null ||
+    photoFilmMergedApprox != null
+      ? (photoMergedApprox ?? 0) +
+        (videoMergedApprox ?? 0) +
+        (standaloneEstimated ?? 0) +
+        (photoFilmMergedApprox ?? 0)
       : null
 
   const standaloneEnhancementSelections =
     countEnhancementStandaloneSelections(
-      selectedPhotoItems,
+      selectedPhotoOnlyItems,
       photoEnhanceByTier,
       addonCatalog
     ) +
@@ -1209,7 +1282,7 @@ export default function TestingPackageBuilder({
     videoCatalog.some((row) => (row.optionalAddOns?.length ?? 0) > 0)
 
   const standalonePackageOptCount =
-    countStandaloneOptionalAdds(selectedPhotoItems, photoPackageOptionalAdds) +
+    countStandaloneOptionalAdds(selectedPhotoOnlyItems, photoPackageOptionalAdds) +
     countStandaloneOptionalAdds(selectedVideoItems, videoPackageOptionalAdds)
 
   const standaloneSelectionTally =
@@ -1217,6 +1290,16 @@ export default function TestingPackageBuilder({
     standalonePickCount +
     standaloneQuantityVarsActive +
     standalonePackageOptCount
+
+  const showPhotoFilmTotalsTile = photoFilmBundleOffers.length > 0
+  const approxTotalsTileCount =
+    2 + (showPhotoFilmTotalsTile ? 1 : 0) + (showStandaloneTotalsTile ? 1 : 0)
+  const approxTotalsGridClass =
+    approxTotalsTileCount >= 4
+      ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-4'
+      : approxTotalsTileCount === 3
+        ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+        : 'grid-cols-1 md:grid-cols-2'
 
   const activeVariableLineCount = builderVariables.reduce((acc, v) => {
     if (v.kind === 'quantity') {
@@ -1281,7 +1364,20 @@ export default function TestingPackageBuilder({
           eventDate: eventDate.trim(),
           location: location.trim(),
           notes: notes.trim(),
-          photoItems: selectedPhotoItems.map((item) => {
+          photoItems: selectedPhotoOnlyItems.map((item) => {
+            const enhRows = enhancementsToPayloadRows(
+              photoEnhanceByTier[item.id],
+              addonCatalog,
+              photoEnhanceLineExcl[item.id]
+            )
+            const base = buildCatalogSelectionPayload(
+              item,
+              photoLineExclusions[item.id],
+              photoPackageOptionalAdds[item.id]
+            )
+            return enhRows.length ? { ...base, alacarteSelections: enhRows } : base
+          }),
+          photoFilmItems: selectedPhotoFilmBundleItems.map((item) => {
             const enhRows = enhancementsToPayloadRows(
               photoEnhanceByTier[item.id],
               addonCatalog,
@@ -2112,21 +2208,16 @@ export default function TestingPackageBuilder({
                   tax (GST not included). We take the first <span className="text-white/60">$</span>{' '}
                   amount in each package or line where shown. Unchecking optional lines may lower the
                   package estimate when those lines carry a credit. Enhancements you add from the
-                  dropdown roll into the photography total, cinematography total, or the combined
-                  total depending on how each item is set up. Optional quantity fields multiply the
-                  first <span className="text-white/60">$</span> on the per-unit price when shown.
+                  dropdown roll into the photography column, cinematography column,{' '}
+                  <span className="text-white/60">photo + film bundles</span> (when listed), or the
+                  combined total depending on each item&apos;s rollup. Optional quantity fields multiply
+                  the first <span className="text-white/60">$</span> on the per-unit price when shown.
                   Your final proposal may differ—we&apos;ll confirm everything in writing.
                 </p>
-                <div
-                  className={`grid gap-4 text-sm tabular-nums ${
-                    showStandaloneTotalsTile
-                      ? 'grid-cols-1 sm:grid-cols-3'
-                      : 'grid-cols-1 md:grid-cols-2'
-                  }`}
-                >
+                <div className={`grid gap-4 text-sm tabular-nums ${approxTotalsGridClass}`}>
                   <div className="rounded-xl bg-black/40 border border-white/10 px-4 py-3">
                     <p className="text-[10px] uppercase tracking-wider text-white/45 mb-1">
-                      Photography ({selectedPhotoItems.length}
+                      Photography ({selectedPhotoOnlyItems.length}
                       {photoExtrasMerged != null && photoExtrasMerged > 0
                         ? ` · +${formatMoneySimple(photoExtrasMerged)} extras`
                         : ''}
@@ -2152,6 +2243,22 @@ export default function TestingPackageBuilder({
                         : '—'}
                     </p>
                   </div>
+                  {showPhotoFilmTotalsTile ? (
+                    <div className="rounded-xl bg-black/40 border border-white/10 px-4 py-3">
+                      <p className="text-[10px] uppercase tracking-wider text-white/45 mb-1">
+                        Photo + film ({selectedPhotoFilmBundleItems.length}
+                        {photoFilmExtrasMerged != null && photoFilmExtrasMerged > 0
+                          ? ` · +${formatMoneySimple(photoFilmExtrasMerged)} extras`
+                          : ''}
+                        )
+                      </p>
+                      <p className="text-lg font-medium text-accent">
+                        {photoFilmMergedApprox != null
+                          ? formatMoneySimple(photoFilmMergedApprox)
+                          : '—'}
+                      </p>
+                    </div>
+                  ) : null}
                   {showStandaloneTotalsTile ? (
                     <div className="rounded-xl bg-black/40 border border-white/10 px-4 py-3">
                       <p className="text-[10px] uppercase tracking-wider text-white/45 mb-1">
@@ -2190,14 +2297,14 @@ export default function TestingPackageBuilder({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                 <div>
                   <p className="text-xs uppercase tracking-wider text-white/45 mb-3">
-                    In your photo package ({selectedPhotoItems.length})
+                    In your photo package ({selectedPhotoOnlyItems.length})
                   </p>
                   <AnimatePresence mode="popLayout">
-                    {selectedPhotoItems.length === 0 ? (
+                    {selectedPhotoOnlyItems.length === 0 ? (
                       <p className="text-sm text-white/35 italic">Nothing added yet.</p>
                     ) : (
                       <ul className="space-y-3">
-                        {selectedPhotoItems.map((item) => (
+                        {selectedPhotoOnlyItems.map((item) => (
                           <motion.li
                             key={item.id}
                             layout
@@ -2407,6 +2514,118 @@ export default function TestingPackageBuilder({
                   </AnimatePresence>
                 </div>
               </div>
+
+              {photoFilmBundleOffers.length > 0 ? (
+                <div className="mt-10 pt-8 border-t border-white/10 mb-10">
+                  <p className="text-xs uppercase tracking-wider text-white/45 mb-3">
+                    In your photo + film package ({selectedPhotoFilmBundleItems.length})
+                  </p>
+                  <AnimatePresence mode="popLayout">
+                    {selectedPhotoFilmBundleItems.length === 0 ? (
+                      <p className="text-sm text-white/35 italic">Nothing added yet.</p>
+                    ) : (
+                      <ul className="space-y-3">
+                        {selectedPhotoFilmBundleItems.map((item) => (
+                          <motion.li
+                            key={item.id}
+                            layout
+                            initial={{ opacity: 0, x: -6 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0 }}
+                            className="text-sm flex flex-col gap-2"
+                          >
+                            <span className="flex gap-2">
+                              <Check className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                              <span className="text-white/85">
+                                <span className="font-medium text-white">{item.title}</span>
+                                {item.price?.trim() ? (
+                                  <span className="text-white/50 font-normal"> · {item.price}</span>
+                                ) : null}
+                                {(() => {
+                                  const { subtotal } = computePackageEstimate(
+                                    item,
+                                    photoLineExclusions[item.id] ?? emptyExcluded
+                                  )
+                                  return subtotal != null ? (
+                                    <span className="text-accent/90 font-normal">
+                                      {' '}
+                                      · Est. {formatMoneySimple(subtotal)}
+                                    </span>
+                                  ) : null
+                                })()}
+                              </span>
+                            </span>
+                            {(item.optionalAddOns ?? [])
+                              .filter((a) => photoPackageOptionalAdds[item.id]?.has(a.id))
+                              .map((a) => {
+                                const addEst = extractFirstDollarAmount(a.price ?? '')
+                                return (
+                                  <span
+                                    key={a.id}
+                                    className="pl-11 text-[13px] border-l border-emerald-500/30 text-emerald-100/90"
+                                  >
+                                    <span className="text-emerald-300/80 text-[10px] uppercase tracking-wider">
+                                      Add-on ·{' '}
+                                    </span>
+                                    <span className="font-medium text-white">{a.title}</span>
+                                    {a.price?.trim() ? (
+                                      <span className="text-white/45 font-normal">
+                                        {' '}
+                                        · {a.price}
+                                      </span>
+                                    ) : null}
+                                    {typeof addEst === 'number' ? (
+                                      <span className="text-accent tabular-nums font-normal">
+                                        {' '}
+                                        · +{formatMoneySimple(addEst)} est.
+                                      </span>
+                                    ) : null}
+                                  </span>
+                                )
+                              })}
+                            {[...(photoEnhanceByTier[item.id] ?? [])].map((addonId) => {
+                              const add = addonCatalog.find((x) => x.id === addonId)
+                              if (!add) return null
+                              const { subtotal } = computePackageEstimate(
+                                add,
+                                photoEnhanceLineExcl[item.id]?.[addonId] ?? emptyExcluded
+                              )
+                              return (
+                                <span
+                                  key={`${item.id}_pf_enh_${addonId}`}
+                                  className="pl-11 text-[13px] border-l border-violet-400/40 text-violet-100/92"
+                                >
+                                  <span className="text-violet-300/85 text-[10px] uppercase tracking-wider">
+                                    Enhancement ·{' '}
+                                  </span>
+                                  <span className="font-medium text-white">{add.title}</span>
+                                  {add.price?.trim() ? (
+                                    <span className="text-white/45 font-normal">
+                                      {' '}
+                                      · {add.price}
+                                    </span>
+                                  ) : null}
+                                  {subtotal != null ? (
+                                    <span className="text-accent tabular-nums font-normal">
+                                      {' '}
+                                      · Est. {formatMoneySimple(subtotal)}
+                                    </span>
+                                  ) : null}
+                                  {add.addonTotalsToward ? (
+                                    <span className="block text-[10px] text-white/38 mt-0.5">
+                                      {ADDON_ROLLUP_HINT[add.addonTotalsToward]}
+                                    </span>
+                                  ) : null}
+                                </span>
+                              )
+                            })}
+                          </motion.li>
+                        ))}
+                      </ul>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : null}
 
               {builderVariables.length > 0 ? (
                 <div className="mt-10 pt-8 border-t border-white/10">

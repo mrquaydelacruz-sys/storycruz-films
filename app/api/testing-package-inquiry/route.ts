@@ -414,12 +414,14 @@ export async function POST(request: NextRequest) {
     const packageBuilderSlug = String(body.packageBuilderSlug ?? '').trim()
 
     const photoItems = normalizeSelections(body.photoItems)
+    const photoFilmItems = normalizeSelections(body.photoFilmItems)
     const videoItems = normalizeSelections(body.videoItems)
     const addonItems = normalizeSelections(body.addonItems)
     const quantityVariableItems = normalizeQuantityVariables(body.quantityVariables)
     const variablePickItems = normalizeSelections(body.variablePickItems)
 
     const photoPackagesSum = approxColumnNumericSum(photoItems)
+    const photoFilmPackagesSum = approxColumnNumericSum(photoFilmItems)
     const videoPackagesSum = approxColumnNumericSum(videoItems)
     const addonPhotoSum = approxTowardNumericSum(addonItems, 'photography')
     const addonVideoSum = approxTowardNumericSum(addonItems, 'cinematography')
@@ -437,9 +439,18 @@ export async function POST(request: NextRequest) {
     const pickStandaloneSum = approxTowardNumericSum(variablePickItems, 'standalone')
 
     const tierOptFlatPhoto = flattenTierNestedAdds(photoItems)
+    const tierOptFlatPhotoFilm = flattenTierNestedAdds(photoFilmItems)
     const tierOptFlatVideo = flattenTierNestedAdds(videoItems)
     const tierOptPhotoSum = approxTowardNumericSum(tierOptFlatPhoto, 'photography')
     const tierOptVideoSum = approxTowardNumericSum(tierOptFlatVideo, 'cinematography')
+    /** Bundle-tier nested adds: all rollup slices → Photo + film line (matches builder UI). */
+    const tierOptPhotoFilmMerged = mergeNullableSums(
+      mergeNullableSums(
+        approxTowardNumericSum(tierOptFlatPhotoFilm, 'photography'),
+        approxTowardNumericSum(tierOptFlatPhotoFilm, 'cinematography')
+      ),
+      approxTowardNumericSum(tierOptFlatPhotoFilm, 'standalone')
+    )
     const tierOptStandaloneMerged = mergeNullableSums(
       approxTowardNumericSum(tierOptFlatPhoto, 'standalone'),
       approxTowardNumericSum(tierOptFlatVideo, 'standalone')
@@ -466,15 +477,30 @@ export async function POST(request: NextRequest) {
       ),
       tierOptStandaloneMerged
     )
+
+    const photoFilmMergedNum = mergeNullableSums(
+      photoFilmPackagesSum,
+      tierOptPhotoFilmMerged
+    )
+
     const photoApproxStr =
       photoMerged != null ? formatMoneyBrief(photoMerged) : null
     const videoApproxStr =
       videoMerged != null ? formatMoneyBrief(videoMerged) : null
     const standaloneApproxStr =
       standaloneMerged != null ? formatMoneyBrief(standaloneMerged) : null
+    const photoFilmApproxStr =
+      photoFilmMergedNum != null ? formatMoneyBrief(photoFilmMergedNum) : null
+
     const combinedSum =
-      photoMerged != null || videoMerged != null || standaloneMerged != null
-        ? (photoMerged ?? 0) + (videoMerged ?? 0) + (standaloneMerged ?? 0)
+      photoMerged != null ||
+      videoMerged != null ||
+      standaloneMerged != null ||
+      photoFilmMergedNum != null
+        ? (photoMerged ?? 0) +
+          (videoMerged ?? 0) +
+          (standaloneMerged ?? 0) +
+          (photoFilmMergedNum ?? 0)
         : null
 
     if (!fullName || !email) {
@@ -486,11 +512,13 @@ export async function POST(request: NextRequest) {
 
     if (
       photoItems.length === 0 &&
+      photoFilmItems.length === 0 &&
       videoItems.length === 0 &&
       addonItems.length === 0 &&
       quantityVariableItems.length === 0 &&
       variablePickItems.length === 0 &&
       !selectionsHaveTierNestedAdds(photoItems) &&
+      !selectionsHaveTierNestedAdds(photoFilmItems) &&
       !selectionsHaveTierNestedAdds(videoItems)
     ) {
       return NextResponse.json(
@@ -514,8 +542,10 @@ export async function POST(request: NextRequest) {
     })()
 
     const approxFooter = [
-      photoApproxStr && `Approx. photography (packages + à la carte → photo column): ${photoApproxStr}`,
-      videoApproxStr && `Approx. cinematography (packages + à la carte → cinema column): ${videoApproxStr}`,
+      photoApproxStr && `Approx. photography (packages + tier adds → photo column): ${photoApproxStr}`,
+      photoFilmApproxStr &&
+        `Approx. photo + film bundles (packages + tier adds on those bundles): ${photoFilmApproxStr}`,
+      videoApproxStr && `Approx. cinematography (packages + tier adds → cinema column): ${videoApproxStr}`,
       standaloneApproxStr &&
         `Approx. standalone lines (combined total only slice): ${standaloneApproxStr}`,
       combinedSum != null && `Approx. combined (builder, pre-tax): ${formatMoneyBrief(combinedSum)}`,
@@ -529,6 +559,9 @@ export async function POST(request: NextRequest) {
       location && `Location: ${location}`,
       '',
       photoItems.length > 0 && `Photography:\n${formatSelectionLines(photoItems)}`,
+      '',
+      photoFilmItems.length > 0 &&
+        `Photo + film bundles:\n${formatSelectionLines(photoFilmItems)}`,
       '',
       videoItems.length > 0 && `Videography:\n${formatSelectionLines(videoItems)}`,
       addonItems.length > 0 && `À la carte add-ons:\n${formatSelectionLines(addonItems)}`,
