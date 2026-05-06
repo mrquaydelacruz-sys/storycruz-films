@@ -130,6 +130,47 @@ export default defineType({
     }),
 
     defineField({
+      name: 'includeHiddenPricingPhotoFilmBundles',
+      title: 'Include bundled tiers from Hidden Pricing (Seasonal)',
+      type: 'boolean',
+      description:
+        'When ON (default), Signature Combo–style tiers from your linked Hidden Pricing Page appear in Photo + film. Turn OFF if this brief should show **only** the rows you add under Photo + film packages.',
+      initialValue: true,
+      hidden: ({ document }) => document?.useInvestmentGuide === false,
+    }),
+    defineField({
+      name: 'photoFilmSectionTitle',
+      title: 'Photo + film section title',
+      type: 'string',
+      description:
+        'Heading for the bundled photo + cinematography tiers (full-width row below Photography & Cinematography).',
+      initialValue: 'Photo + film',
+    }),
+    defineField({
+      name: 'photoFilmSectionSubtitle',
+      title: 'Photo + film section subtitle',
+      type: 'string',
+      description: 'Muted line below the heading (same role as Photo / Cinematography column subtitles).',
+      initialValue: 'Tap to add or remove bundled packages',
+    }),
+    defineField({
+      name: 'photoFilmSectionIntro',
+      title: 'Photo + film intro (optional)',
+      type: 'text',
+      rows: 4,
+      description:
+        'Optional paragraph shown under the subtitle to explain combos, eligibility, or how bundling saves money.',
+    }),
+    defineField({
+      name: 'photoFilmOfferings',
+      title: 'Photo + film packages',
+      description:
+        'Bundles clients toggle in the Photo + film section below the Photography & Cinematography columns. Add/remove/reorder rows here. Hidden Pricing combos also flow in unless you turn “Include bundled tiers…” off.',
+      type: 'array',
+      of: [{ type: 'packageBuilderOffering' }],
+    }),
+
+    defineField({
       name: 'addonSectionTitle',
       title: 'À la carte section heading',
       type: 'string',

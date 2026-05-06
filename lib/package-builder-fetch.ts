@@ -17,6 +17,13 @@ export const PACKAGE_BUILDER_BRIEF_QUERY = `
   videoOfferings[]{ _key, key, title, description, price, included,
     optionalPackageAddOns[]{ key, title, description, price, addonTotalsToward }
   },
+  includeHiddenPricingPhotoFilmBundles,
+  photoFilmSectionTitle,
+  photoFilmSectionSubtitle,
+  photoFilmSectionIntro,
+  photoFilmOfferings[]{ _key, key, title, description, price, included,
+    optionalPackageAddOns[]{ key, title, description, price, addonTotalsToward }
+  },
   addonSectionTitle,
   addonSectionSubtitle,
   addonOfferings[]{ _key, key, title, description, price, included, addonTotalsToward },

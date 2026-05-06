@@ -47,6 +47,8 @@ export const PACKAGE_BUILDER_DEFAULTS = {
     'Add extras from the list below to any selected photography or cinematography package.',
   variablesSectionTitle: 'Customize quantities & extras',
   variablesSectionSubtitle: 'Optional quantities and add-ons you can tune below.',
+  photoFilmSectionTitle: 'Photo + film',
+  photoFilmSectionSubtitle: 'Tap to add or remove bundled packages',
 } as const
 
 /** Sanity → UI + math (counts or curated picks). */
@@ -241,6 +243,12 @@ export type PackageBuilderGroqDoc = {
   videoColumnSubtitle?: string | null
   photoOfferings?: SanityOfferingRow[] | null
   videoOfferings?: SanityOfferingRow[] | null
+  /** When explicitly false with a brief, omit seasonal Signature Combo rows from Hidden Pricing in Photo + film. */
+  includeHiddenPricingPhotoFilmBundles?: boolean | null
+  photoFilmSectionTitle?: string | null
+  photoFilmSectionSubtitle?: string | null
+  photoFilmSectionIntro?: string | null
+  photoFilmOfferings?: SanityOfferingRow[] | null
   addonSectionTitle?: string | null
   addonSectionSubtitle?: string | null
   addonOfferings?: SanityOfferingRow[] | null
@@ -318,6 +326,20 @@ function normalizeBriefVideoOfferings(
   return (rows ?? [])
     .map((r) =>
       rowToCatalogItem(r, { optionalAddonRollupDefault: 'cinematography' })
+    )
+    .filter((x): x is PackageCatalogItem => x !== null)
+}
+
+/** Tier-style rows under Photo + film (bundles); prefixed ids avoid colliding with Hidden Pricing combos. */
+function normalizeBriefPhotoFilmOfferings(
+  rows: SanityOfferingRow[] | null | undefined
+): PackageCatalogItem[] {
+  return (rows ?? [])
+    .map((r) =>
+      rowToCatalogItem(r, {
+        idPrefix: 'brief_pf__',
+        optionalAddonRollupDefault: 'photography',
+      })
     )
     .filter((x): x is PackageCatalogItem => x !== null)
 }
@@ -411,8 +433,13 @@ export type PackageBuilderResolvedProps = {
   videoColumnTitle: string
   videoColumnSubtitle: string
   photoCatalog: PackageCatalogItem[]
-  /** Combo bundles (e.g. seasonal “Signature Combo”) surfaced after the photo+film CTA — same selection model as photography tiers */
+  /** Combo bundles (e.g. seasonal “Signature Combo”) — rendered in an accordion below photography collections in the interactive builder */
+  /** Bundled photo + cinema tiers displayed in their own section below the two-column grid */
   photoFilmBundleOffers: PackageCatalogItem[]
+  photoFilmSectionTitle: string
+  photoFilmSectionSubtitle: string
+  /** Optional intro paragraph beneath the subtitle (CMS only). */
+  photoFilmSectionIntro: string | null
   videoCatalog: PackageCatalogItem[]
   /** Optional third list – extra hour / second shooter / travel, grouped by rollup in Studio */
   addonCatalog: PackageCatalogItem[]
@@ -474,10 +501,19 @@ export function resolvePackageBuilderPage({
 
   const manualPhoto = brief ? normalizeBriefPhotoOfferings(brief.photoOfferings) : []
   const manualVideo = brief ? normalizeBriefVideoOfferings(brief.videoOfferings) : []
+  const manualPhotoFilm = brief ? normalizeBriefPhotoFilmOfferings(brief.photoFilmOfferings) : []
+
+  const inheritHiddenPricingPhotoFilmBundles =
+    brief == null || brief.includeHiddenPricingPhotoFilmBundles !== false
+  const comboRowsFromHiddenPricing =
+    loadFromGuide && inheritHiddenPricingPhotoFilmBundles ? rawPhotoFilmBundles : []
 
   let photoCatalog = enrichCatalogItems([...photoGuide, ...manualPhoto])
   let videoCatalog = enrichCatalogItems([...videoGuide, ...manualVideo])
-  let photoFilmBundleOffers = enrichCatalogItems(rawPhotoFilmBundles)
+  let photoFilmBundleOffers = enrichCatalogItems([
+    ...comboRowsFromHiddenPricing,
+    ...manualPhotoFilm,
+  ])
   let addonCatalog = brief
     ? enrichCatalogItems(normalizeAddonOfferings(brief.addonOfferings))
     : []
@@ -569,6 +605,14 @@ export function resolvePackageBuilderPage({
     videoColumnSubtitle = d.videoColumnSubtitle
   }
 
+  const rawPhotoFilmIntro = `${brief?.photoFilmSectionIntro ?? ''}`.trim()
+  const photoFilmSectionTitleResolved =
+    `${brief?.photoFilmSectionTitle ?? ''}`.trim() || d.photoFilmSectionTitle
+  const photoFilmSectionSubtitleResolved =
+    `${brief?.photoFilmSectionSubtitle ?? ''}`.trim() || d.photoFilmSectionSubtitle
+  const photoFilmSectionIntroResolved =
+    rawPhotoFilmIntro.length > 0 ? rawPhotoFilmIntro : null
+
   return {
     eyebrow,
     title,
@@ -579,6 +623,9 @@ export function resolvePackageBuilderPage({
     videoColumnSubtitle,
     photoCatalog,
     photoFilmBundleOffers,
+    photoFilmSectionTitle: photoFilmSectionTitleResolved,
+    photoFilmSectionSubtitle: photoFilmSectionSubtitleResolved,
+    photoFilmSectionIntro: photoFilmSectionIntroResolved,
     videoCatalog,
     addonCatalog,
     addonSectionTitle,

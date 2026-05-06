@@ -18,6 +18,7 @@ import {
   Minus,
   SlidersHorizontal,
   List,
+  Layers,
 } from 'lucide-react'
 import BackgroundWater from '@/components/BackgroundWater'
 import InvestmentGuideHero from '@/components/InvestmentGuideHero'
@@ -257,45 +258,36 @@ function CatalogOption({
                     ) : null}
 
                     {!customOpen ? (
-                      <>
-                        {togglableLines.length === 0 ? (
-                          <p className="text-sm text-white/45 leading-snug mb-3">
-                            Every feature in this package is{' '}
-                            <span className="text-white/60">fixed</span>
-                            —individual lines can&apos;t be removed here.
-                          </p>
-                        ) : null}
-                        <ul className="space-y-2">
-                          {includedLinesUi.length === 0 ? (
-                            <li className="text-sm text-white/45 italic leading-snug">
-                              No bullets kept—use Customize if that was unintended, or confirm with
-                              Story Cruz.
+                      <ul className="space-y-2">
+                        {includedLinesUi.length === 0 ? (
+                          <li className="text-sm text-white/45 italic leading-snug">
+                            No bullets kept—use Customize if that was unintended, or confirm with
+                            Story Cruz.
+                          </li>
+                        ) : (
+                          includedLinesUi.map((line) => (
+                            <li
+                              key={line.id}
+                              className="text-sm text-white/75 flex gap-2.5 leading-snug"
+                            >
+                              <Check className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                              <span>
+                                {line.label}
+                                {line.removable === false ? (
+                                  <span className="text-white/38 text-xs"> (core)</span>
+                                ) : lineDeductionHint(line) != null ? (
+                                  <span className="text-white/35 text-xs">
+                                    {' '}
+                                    (~
+                                    {formatMoneySimple(lineDeductionHint(line)!)}{' '}
+                                    less when unchecked)
+                                  </span>
+                                ) : null}
+                              </span>
                             </li>
-                          ) : (
-                            includedLinesUi.map((line) => (
-                              <li
-                                key={line.id}
-                                className="text-sm text-white/75 flex gap-2.5 leading-snug"
-                              >
-                                <Check className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-                                <span>
-                                  {line.label}
-                                  {line.removable === false ? (
-                                    <span className="text-white/38 text-xs"> (core)</span>
-                                  ) : lineDeductionHint(line) != null ? (
-                                    <span className="text-white/35 text-xs">
-                                      {' '}
-                                      (~
-                                      {formatMoneySimple(lineDeductionHint(line)!)}{' '}
-                                      less when unchecked)
-                                    </span>
-                                  ) : null}
-                                </span>
-                              </li>
-                            ))
-                          )}
-                        </ul>
-                      </>
+                          ))
+                        )}
+                      </ul>
                     ) : null}
 
                     {customOpen ? (
@@ -827,6 +819,9 @@ export default function TestingPackageBuilder({
   videoColumnSubtitle,
   photoCatalog,
   photoFilmBundleOffers = [],
+  photoFilmSectionTitle,
+  photoFilmSectionSubtitle,
+  photoFilmSectionIntro,
   videoCatalog,
   addonCatalog,
   addonSectionTitle,
@@ -851,12 +846,13 @@ export default function TestingPackageBuilder({
   const [notes, setNotes] = useState('')
   const notesRef = useRef<HTMLTextAreaElement>(null)
 
-  const [showPhotoFilmBundles, setShowPhotoFilmBundles] = useState(false)
   const [photoSelected, setPhotoSelected] = useState<Set<string>>(new Set())
   const [videoSelected, setVideoSelected] = useState<Set<string>>(new Set())
   /** When a tier is selected and this is false, only selected tier cards render (less clutter). */
   const [photoBrowseAllTiers, setPhotoBrowseAllTiers] = useState(false)
   const [videoBrowseAllTiers, setVideoBrowseAllTiers] = useState(false)
+  /** Photo + film bundles only — mirrors photography browse / focus UX. */
+  const [photoFilmBrowseAllBundles, setPhotoFilmBrowseAllBundles] = useState(false)
 
   /** Per catalog item id: excluded `includedLines` ids (unchecked in customize). */
   const [photoLineExclusions, setPhotoLineExclusions] = useState<
@@ -906,13 +902,63 @@ export default function TestingPackageBuilder({
     if (videoSelected.size === 0) setVideoBrowseAllTiers(false)
   }, [videoSelected.size])
 
+  const anyPhotoFilmBundleSelected = useMemo(
+    () => photoFilmBundleOffers.some((i) => photoSelected.has(i.id)),
+    [photoFilmBundleOffers, photoSelected]
+  )
+
+  useEffect(() => {
+    if (!anyPhotoFilmBundleSelected) setPhotoFilmBrowseAllBundles(false)
+  }, [anyPhotoFilmBundleSelected])
+
   const photoHasMultipleTiers = photoCatalog.length > 1
   const videoHasMultipleTiers = videoCatalog.length > 1
+  const photoFilmHasMultipleBundles = photoFilmBundleOffers.length > 1
 
-  const visiblePhotoPackages = useMemo(() => {
-    if (photoSelected.size === 0 || photoBrowseAllTiers) return photoCatalog
-    return photoCatalog.filter((i) => photoSelected.has(i.id))
-  }, [photoCatalog, photoSelected, photoBrowseAllTiers])
+  const visiblePhotoFilmBundles = useMemo(() => {
+    if (
+      photoFilmBundleOffers.length === 0 ||
+      !anyPhotoFilmBundleSelected ||
+      photoFilmBrowseAllBundles
+    ) {
+      return photoFilmBundleOffers
+    }
+    return photoFilmBundleOffers.filter((i) => photoSelected.has(i.id))
+  }, [
+    photoFilmBundleOffers,
+    photoSelected,
+    photoFilmBrowseAllBundles,
+    anyPhotoFilmBundleSelected,
+  ])
+
+  const photoFilmBundlesSelectedCount = useMemo(() => {
+    let n = 0
+    for (const row of photoFilmBundleOffers) {
+      if (photoSelected.has(row.id)) n++
+    }
+    return n
+  }, [photoFilmBundleOffers, photoSelected])
+
+  /** Core guide rows (`pricing.photoPackages` + brief) — excludes `invest-season-*` appendix. */
+  const photoCatalogCollections = useMemo(
+    () => photoCatalog.filter((i) => !i.id.startsWith('invest-season-')),
+    [photoCatalog]
+  )
+  /** Seasonal & intimate appendix (non-combo); Signature Combos stay in `photoFilmBundleOffers`. */
+  const photoCatalogSeasonal = useMemo(
+    () => photoCatalog.filter((i) => i.id.startsWith('invest-season-')),
+    [photoCatalog]
+  )
+
+  const visiblePhotoCollections = useMemo(() => {
+    if (photoSelected.size === 0 || photoBrowseAllTiers) return photoCatalogCollections
+    return photoCatalogCollections.filter((i) => photoSelected.has(i.id))
+  }, [photoCatalogCollections, photoSelected, photoBrowseAllTiers])
+
+  const visiblePhotoSeasonal = useMemo(() => {
+    if (photoSelected.size === 0 || photoBrowseAllTiers) return photoCatalogSeasonal
+    return photoCatalogSeasonal.filter((i) => photoSelected.has(i.id))
+  }, [photoCatalogSeasonal, photoSelected, photoBrowseAllTiers])
 
   const visibleVideoPackages = useMemo(() => {
     if (videoSelected.size === 0 || videoBrowseAllTiers) return videoCatalog
@@ -1326,25 +1372,6 @@ export default function TestingPackageBuilder({
     )
   }
 
-  const focusNotesField = () => {
-    notesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    window.setTimeout(() => notesRef.current?.focus(), 380)
-  }
-
-  const togglePhotoFilmBundlesAndScroll = () => {
-    setShowPhotoFilmBundles((open) => {
-      const next = !open
-      if (next) {
-        window.requestAnimationFrame(() => {
-          document
-            .getElementById('photo-film-bundle-list')
-            ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        })
-      }
-      return next
-    })
-  }
-
   const renderPhotoTierItem = (item: PackageCatalogItem) => (
     <CatalogOption
       key={item.id}
@@ -1642,50 +1669,27 @@ export default function TestingPackageBuilder({
                   </div>
                 ) : null}
 
-                <ul className="space-y-4">{visiblePhotoPackages.map(renderPhotoTierItem)}</ul>
-
-                <div className="mt-5 rounded-xl border border-accent/35 bg-accent/[0.06] px-4 py-4">
-                  <p className="text-sm font-medium text-white mb-1">Photo + film together?</p>
-                  <p className="text-xs text-white/50 leading-relaxed mb-3">
-                    {photoFilmBundleOffers.length > 0
-                      ? 'Open bundled tiers for combo pricing and each inclusion — expand a card to read the details — then pair it with cinematography on the right.'
-                      : 'Tell us in your notes and we&apos;ll tailor a quote when you want photography and cinematography bundled.'}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {photoFilmBundleOffers.length > 0 ? (
-                      <button
-                        type="button"
-                        onClick={togglePhotoFilmBundlesAndScroll}
-                        className="inline-flex items-center gap-2 rounded-full border border-accent/60 bg-accent/15 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-accent hover:bg-accent/25 transition-colors"
-                      >
-                        {showPhotoFilmBundles ? 'Hide bundled tiers' : 'See bundled photo + film tiers'}
-                        <ArrowRight className="w-3.5 h-3.5" aria-hidden />
-                      </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={focusNotesField}
-                      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-wider transition-colors ${
-                        photoFilmBundleOffers.length > 0
-                          ? 'border-white/25 bg-transparent text-white/70 hover:bg-white/[0.06]'
-                          : 'border-accent/60 bg-accent/15 text-accent hover:bg-accent/25'
-                      }`}
-                    >
-                      {photoFilmBundleOffers.length > 0
-                        ? 'Custom combo — write this in notes'
-                        : 'Request a combined deal'}
-                      <ArrowRight className="w-3.5 h-3.5" aria-hidden />
-                    </button>
-                  </div>
-                  {photoFilmBundleOffers.length > 0 && showPhotoFilmBundles ? (
-                    <ul
-                      id="photo-film-bundle-list"
-                      className="mt-4 space-y-4 pt-4 border-t border-white/10"
-                    >
-                      {photoFilmBundleOffers.map(renderPhotoTierItem)}
+                {visiblePhotoCollections.length > 0 ? (
+                  <div className={visiblePhotoSeasonal.length > 0 ? 'mb-8' : ''}>
+                    <h3 className="text-[11px] font-semibold text-white/50 uppercase tracking-[0.2em] mb-4">
+                      Collections 1–3
+                    </h3>
+                    <ul className="space-y-4">
+                      {visiblePhotoCollections.map(renderPhotoTierItem)}
                     </ul>
-                  ) : null}
-                </div>
+                  </div>
+                ) : null}
+
+                {visiblePhotoSeasonal.length > 0 ? (
+                  <div>
+                    <h3 className="text-[11px] font-semibold text-white/50 uppercase tracking-[0.2em] mb-4">
+                      {photoCatalogCollections.length > 0 ? 'Seasonal collections' : 'Photography collections'}
+                    </h3>
+                    <ul className="space-y-4">
+                      {visiblePhotoSeasonal.map(renderPhotoTierItem)}
+                    </ul>
+                  </div>
+                ) : null}
               </motion.section>
 
               <motion.section
@@ -1846,6 +1850,77 @@ export default function TestingPackageBuilder({
                 </ul>
               </motion.section>
             </div>
+
+            {photoFilmBundleOffers.length > 0 ? (
+              <motion.section
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.18 }}
+                className="bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-sm rounded-2xl border border-white/10 p-6 md:p-8 shadow-2xl mb-10"
+                aria-labelledby="photo-film-section-heading"
+              >
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/10">
+                  <Layers className="w-7 h-7 text-accent shrink-0" aria-hidden />
+                  <div>
+                    <h2 id="photo-film-section-heading" className="text-xl font-serif text-white">
+                      {photoFilmSectionTitle}
+                    </h2>
+                    <p className="text-xs text-white/45 uppercase tracking-wider mt-1">
+                      {photoFilmSectionSubtitle}
+                    </p>
+                  </div>
+                </div>
+                {photoFilmSectionIntro ? (
+                  <p
+                    className={`text-sm text-white/55 leading-relaxed max-w-3xl ${
+                      photoFilmHasMultipleBundles && photoFilmBundlesSelectedCount > 0
+                        ? 'mb-5'
+                        : 'mb-8'
+                    }`}
+                  >
+                    {photoFilmSectionIntro}
+                  </p>
+                ) : null}
+
+                {photoFilmHasMultipleBundles && photoFilmBundlesSelectedCount > 0 ? (
+                  <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5">
+                    {!photoFilmBrowseAllBundles ? (
+                      <>
+                        <p className="text-xs text-white/55 leading-snug">
+                          Showing your selected{' '}
+                          {photoFilmBundlesSelectedCount > 1 ? 'bundles' : 'bundle'} only.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setPhotoFilmBrowseAllBundles(true)}
+                          className="inline-flex items-center gap-1.5 shrink-0 rounded-md border border-white/20 bg-white/5 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/85 hover:bg-white/10 hover:border-white/30 transition-colors"
+                        >
+                          <List className="w-3.5 h-3.5" aria-hidden />
+                          Browse all bundles
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-xs text-white/55 leading-snug">
+                          All photo + film bundles — your picks stay selected.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setPhotoFilmBrowseAllBundles(false)}
+                          className="inline-flex items-center gap-1.5 shrink-0 rounded-md border border-accent/45 bg-accent/15 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-accent hover:bg-accent/25 transition-colors"
+                        >
+                          Focus on selection
+                        </button>
+                      </>
+                    )}
+                  </div>
+                ) : null}
+
+                <ul className="space-y-4">
+                  {visiblePhotoFilmBundles.map(renderPhotoTierItem)}
+                </ul>
+              </motion.section>
+            ) : null}
 
             {builderVariables.length > 0 ? (
               <motion.section
