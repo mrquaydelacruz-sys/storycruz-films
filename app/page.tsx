@@ -1,9 +1,12 @@
-import VisionScene from "@/app/vision/VisionScene";
-import { getVisionData } from "@/app/vision/page";
+import { headers } from 'next/headers'
+import VisionExperience from '@/app/vision/VisionExperience'
+import { getVisionData } from '@/lib/vision-data'
+import { isMobileUserAgent } from '@/lib/device'
 
-export const revalidate = 60;
+export const revalidate = 60
 
 export default async function Home() {
-  const data = await getVisionData();
-  return <VisionScene data={data} />;
+  const data = await getVisionData()
+  const ua = (await headers()).get('user-agent')
+  return <VisionExperience data={data} initialLight={isMobileUserAgent(ua)} />
 }

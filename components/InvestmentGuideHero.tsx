@@ -1,4 +1,5 @@
 import { Star } from 'lucide-react'
+import BackgroundVideo from '@/components/BackgroundVideo'
 import {
   INVESTMENT_GUIDE_EYEBROW,
   INVESTMENT_GUIDE_TAGLINE,
@@ -8,24 +9,22 @@ type Props = {
   title: string
   /** MP4 URL from Hidden Pricing hero video, or fallback. */
   videoSrc: string
+  poster?: string
 }
 
-export default function InvestmentGuideHero({ title, videoSrc }: Props) {
+export default function InvestmentGuideHero({ title, videoSrc, poster }: Props) {
   return (
     <section className="relative flex h-[85vh] w-full items-center justify-center overflow-hidden">
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute inset-0 h-full w-full object-cover opacity-50"
-      >
-        <source src={videoSrc} type="video/mp4" />
-      </video>
+      <BackgroundVideo
+        src={videoSrc}
+        poster={poster}
+        className="absolute inset-0"
+        videoClassName="h-full w-full object-cover opacity-50"
+      />
       <div className="absolute inset-0 bg-black/20" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-[#050505]" />
 
-      <div className="relative z-10 mx-auto mt-10 max-w-5xl px-6 text-center animate-in fade-in zoom-in duration-1000">
+      <div className="relative z-10 mx-auto mt-10 max-w-5xl animate-in fade-in zoom-in px-6 text-center duration-1000">
         <div className="mb-6 flex justify-center gap-2 text-yellow-500/80">
           {[...Array(5)].map((_, i) => (
             <Star key={i} size={12} fill="currentColor" />

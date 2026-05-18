@@ -7,7 +7,8 @@ export const client = createClient({
   projectId,
   dataset,
   apiVersion,
-  useCdn: false, // Set to false for fresh data during development
+  // CDN in production for faster reads; API direct in dev for fresher drafts.
+  useCdn: process.env.NODE_ENV === 'production',
 })
 
 const builder = imageUrlBuilder(client);

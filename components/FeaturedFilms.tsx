@@ -91,10 +91,11 @@ export default function FeaturedFilms({
                 {/* 1. YOUTUBE THUMBNAIL LOGIC */}
                 {videoId ? (
                   <Image
-                    src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
+                    src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`}
                     alt={film.title}
                     fill
-                    unoptimized // Essential for external YouTube images
+                    loading="lazy"
+                    unoptimized
                     className="object-cover opacity-80 group-hover:opacity-60 group-hover:scale-105 transition-all duration-700"
                   />
                 ) : (

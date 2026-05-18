@@ -4,7 +4,7 @@ import FAQSection from "@/components/FAQSection";
 import InvestmentGuideHero from "@/components/InvestmentGuideHero";
 import { getPricingFeatureLabel } from "@/lib/pricing-features-normalize";
 
-export const revalidate = 0;
+export const revalidate = 60;
 
 export const metadata = {
   title: 'Investment Guide | Story Cruz Films',

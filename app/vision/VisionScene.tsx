@@ -5,9 +5,11 @@ import { Environment, useVideoTexture, ScrollControls, useScroll, useTexture, Fl
 import { createRoot } from "react-dom/client";
 import { Suspense, useRef, useState, useEffect, createContext, useContext } from "react";
 import * as THREE from 'three';
-import { urlFor } from "@/sanity/client";
-import FeaturedFilms from "@/components/FeaturedFilms";
-import ContactSection from "@/components/ContactSection";
+import dynamic from "next/dynamic";
+import type { VisionData } from "@/app/vision/types";
+
+const FeaturedFilms = dynamic(() => import("@/components/FeaturedFilms"));
+const ContactSection = dynamic(() => import("@/components/ContactSection"));
 import Image from "next/image";
 
 // Scroll state for the overlay (avoids using Scroll html, which can call createRoot twice).
@@ -28,26 +30,7 @@ function ScrollStateWriter({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
 }
 
-// --- TYPES ---
-export type VisionData = {
-    heroVideoUrl: string;
-    introLeftUrl: string;
-    introCenterUrl: string;
-    introSlideshowUrls?: string[];
-    introRightUrl: string;
-    dividerImageUrl?: string | null;
-    testimonials?: {
-        quote: string;
-        couple: string;
-        location?: string;
-    }[];
-    featuredVideos: {
-        title: string;
-        slug?: { current: string };
-        thumbnailUrl: string;
-        videoUrl: string;
-    }[];
-}
+export type { VisionData } from "@/app/vision/types";
 
 // --- COMPONENTS ---
 
@@ -285,7 +268,7 @@ function MainSequence({ data }: { data: VisionData }) {
             {data.dividerImageUrl && (
                 <Divider3D url={data.dividerImageUrl} opacity={opacities.divider} scrollOffset={scrollState.offset} />
             )}
-            <Sparkles count={80} scale={15} size={4} opacity={0.6} speed={0.4} color="#ffe4a1" />
+            <Sparkles count={40} scale={12} size={3} opacity={0.5} speed={0.35} color="#ffe4a1" />
         </>
     );
 }
@@ -522,7 +505,12 @@ export default function VisionScene({ data }: { data: VisionData }) {
     return (
         <ScrollStateContext.Provider value={scrollStateRef}>
             <div ref={wrapperRef} className="h-screen w-full min-h-0 bg-[#050505] relative overflow-hidden z-0">
-                <Canvas className="h-full w-full" camera={{ position: [0, 0, 6], fov: 35 }}>
+                <Canvas
+                    className="h-full w-full"
+                    camera={{ position: [0, 0, 6], fov: 35 }}
+                    dpr={[1, 1.5]}
+                    gl={{ antialias: false, powerPreference: 'high-performance' }}
+                >
                     <Scene data={data} />
                 </Canvas>
             </div>

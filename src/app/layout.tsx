@@ -5,13 +5,15 @@ import "./globals.css";
 const serif = Cormorant_Garamond({
   variable: "--font-serif",
   subsets: ["latin"],
-  weight: ["300", "400", "600", "700"],
+  weight: ["400", "600"],
+  display: "swap",
 });
 
 const sans = Poppins({
   variable: "--font-sans",
   subsets: ["latin"],
-  weight: ["300", "400", "600"],
+  weight: ["400", "600"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {

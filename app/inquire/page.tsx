@@ -1,7 +1,8 @@
 import { client } from "@/sanity/client";
 import ContactForm from "@/components/ContactForm";
+import BackgroundVideo from "@/components/BackgroundVideo";
 
-export const revalidate = 0;
+export const revalidate = 60;
 
 async function getData() {
   return await client.fetch(`*[_type == "siteContent"][0]{
@@ -23,15 +24,11 @@ export default async function InquirePage() {
 
       <section className="relative min-h-[40vh] flex items-center justify-center overflow-hidden py-20">
 
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover opacity-40"
-        >
-          <source src={videoSource} type="video/mp4" />
-        </video>
+        <BackgroundVideo
+          src={videoSource}
+          className="absolute inset-0"
+          videoClassName="h-full w-full object-cover opacity-40"
+        />
 
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black" />
 
