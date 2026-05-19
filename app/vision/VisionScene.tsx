@@ -7,6 +7,8 @@ import { Suspense, useRef, useState, useEffect, createContext, useContext } from
 import * as THREE from 'three';
 import dynamic from "next/dynamic";
 import type { VisionData } from "@/app/vision/types";
+import type { SiteChromeData } from "@/lib/site-chrome";
+import Footer from "@/components/Footer";
 
 const FeaturedFilms = dynamic(() => import("@/components/FeaturedFilms"));
 const ContactSection = dynamic(() => import("@/components/ContactSection"));
@@ -24,7 +26,7 @@ function ScrollStateWriter({ children }: { children: React.ReactNode }) {
         if (stateRef?.current) {
             stateRef.current.offset = scroll.offset;
             stateRef.current.height = size.height;
-            stateRef.current.pages = 5;
+            stateRef.current.pages = 6;
         }
     });
     return <>{children}</>;
@@ -149,28 +151,30 @@ function BorderedImage({ url, position, scale, opacity, radius = 0 }: BorderedIm
     );
 }
 
-function PhotoCarousel({ urls, opacity, scrollOffset }: { urls: string[], opacity: number, scrollOffset: number }) {
-    const groupRef = useRef<THREE.Group>(null);
-    useFrame(() => {
-        if (groupRef.current) {
-            // Active around 0.1 - 0.15
-            const targetX = (scrollOffset - 0.1) * -20;
-            groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, targetX, 0.1);
-        }
-    });
+function PhotoCarousel({ urls, opacity }: { urls: string[]; opacity: number }) {
+    const [activeIndex, setActiveIndex] = useState(0);
+
+    useEffect(() => {
+        if (urls.length <= 1) return;
+        const timer = setInterval(() => {
+            setActiveIndex((prev) => (prev + 1) % urls.length);
+        }, 4000);
+        return () => clearInterval(timer);
+    }, [urls.length]);
 
     if (!urls || urls.length === 0) return null;
 
     return (
-        <group ref={groupRef} position={[3, 0, 0]}>
+        <group position={[3, 0, 0]}>
             {urls.map((url, i) => (
-                <BorderedImage
-                    key={i}
-                    url={url}
-                    scale={[0.85, 1.2]}
-                    position={[i * 1.5, 0, 0]}
-                    opacity={opacity}
-                />
+                <group key={url} visible={i === activeIndex}>
+                    <BorderedImage
+                        url={url}
+                        scale={[0.85, 1.2]}
+                        position={[0, 0, 0]}
+                        opacity={opacity}
+                    />
+                </group>
             ))}
         </group>
     );
@@ -196,7 +200,7 @@ function PhotoGrid({ opacity, data, scrollOffset }: { opacity: number, data: Vis
             )}
 
             {/* Slideshow */}
-            <PhotoCarousel urls={slideshow} opacity={opacity} scrollOffset={scrollOffset} />
+            <PhotoCarousel urls={slideshow} opacity={opacity} />
 
             {/* Right Image */}
             {data.introRightUrl && (
@@ -281,7 +285,15 @@ function progressIn(offset: number, start: number, end: number): number {
 }
 
 // --- HTML SCROLL CONTENT (rendered into ScrollControls’ fixed div via a single root to avoid createRoot twice) ---
-function VisionOverlayContent({ data, scrollStateRef }: { data: VisionData; scrollStateRef: ScrollStateRef }) {
+function VisionOverlayContent({
+    data,
+    chrome,
+    scrollStateRef,
+}: {
+    data: VisionData;
+    chrome: SiteChromeData;
+    scrollStateRef: ScrollStateRef;
+}) {
     const [offset, setOffset] = useState(0);
     const [height, setHeight] = useState(600);
     const lastSet = useRef(0);
@@ -302,7 +314,7 @@ function VisionOverlayContent({ data, scrollStateRef }: { data: VisionData; scro
         return () => cancelAnimationFrame(rafId);
     }, [scrollStateRef]);
 
-    const pages = 5;
+    const pages = 6;
     const featuredEnter = progressIn(offset, 0.30, 0.38);
     const featuredExit = progressIn(offset, 0.42, 0.52);
     const loveNotesEnter = progressIn(offset, 0.50, 0.62);
@@ -393,10 +405,11 @@ function VisionOverlayContent({ data, scrollStateRef }: { data: VisionData; scro
                 </div>
 
                 {/* 3. Contact (Start at ~350vh) */}
-                <div className="absolute top-[350vh] w-full min-h-[100vh] flex flex-col justify-center items-center">
-                    <div className="w-full">
+                <div className="absolute top-[350vh] w-full flex flex-col">
+                    <div className="flex min-h-[100vh] flex-col justify-center">
                         <ContactSection />
                     </div>
+                    <Footer data={chrome} />
                 </div>
         </div>
     );
@@ -425,7 +438,7 @@ function NavbarLogic() {
 // --- SCENE COMPONENT ---
 function Scene({ data }: { data: VisionData }) {
     return (
-        <ScrollControls pages={5} damping={0.3}>
+        <ScrollControls pages={6} damping={0.3}>
             <ScrollStateWriter>
                 <Suspense fallback={null}>
                     <MainSequence data={data} />
@@ -437,9 +450,9 @@ function Scene({ data }: { data: VisionData }) {
     );
 }
 
-export default function VisionScene({ data }: { data: VisionData }) {
+export default function VisionScene({ data, chrome }: { data: VisionData; chrome: SiteChromeData }) {
     const wrapperRef = useRef<HTMLDivElement>(null);
-    const scrollStateRef = useRef({ offset: 0, height: 600, pages: 5 });
+    const scrollStateRef = useRef({ offset: 0, height: 600, pages: 6 });
     const overlayRootRef = useRef<ReturnType<typeof createRoot> | null>(null);
 
     useEffect(() => {
@@ -472,7 +485,7 @@ export default function VisionScene({ data }: { data: VisionData }) {
             const root = overlayRootRef.current ?? createRoot(fixedDiv);
             if (!overlayRootRef.current) overlayRootRef.current = root;
             root.render(
-                <VisionOverlayContent data={data} scrollStateRef={scrollStateRef} />
+                <VisionOverlayContent data={data} chrome={chrome} scrollStateRef={scrollStateRef} />
             );
         };
 
@@ -488,7 +501,7 @@ export default function VisionScene({ data }: { data: VisionData }) {
                 queueMicrotask(() => { root.unmount(); });
             }
         };
-    }, [data]);
+    }, [data, chrome]);
 
     // Prevent body/document scroll so only ScrollControls’ inner div scrolls (no double scrollbar).
     useEffect(() => {

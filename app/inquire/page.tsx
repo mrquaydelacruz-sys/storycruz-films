@@ -49,11 +49,6 @@ export default async function InquirePage() {
         <ContactForm />
       </section>
 
-      <section className="text-center pb-24 text-white/40 text-sm tracking-widest space-y-2">
-        <p>{data?.email}</p>
-        <p>{data?.location}</p>
-      </section>
-
     </main>
   );
 }

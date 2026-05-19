@@ -1,9 +1,13 @@
 'use client'
 
+import { useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
+import AutoImageSlideshow from '@/components/AutoImageSlideshow'
 import BackgroundVideo from '@/components/BackgroundVideo'
+import Footer from '@/components/Footer'
 import type { VisionData } from '@/app/vision/types'
+import type { SiteChromeData } from '@/lib/site-chrome'
 
 const FeaturedFilms = dynamic(() => import('@/components/FeaturedFilms'), {
   loading: () => (
@@ -17,34 +21,26 @@ const ContactSection = dynamic(() => import('@/components/ContactSection'), {
   loading: () => <div className="min-h-[40vh] bg-black" aria-hidden />,
 })
 
-function FramedPhoto({
-  src,
-  alt,
-  width,
-  height,
-  className = '',
+export default function VisionSceneMobile({
+  data,
+  chrome,
 }: {
-  src: string
-  alt: string
-  width: number
-  height: number
-  className?: string
+  data: VisionData
+  chrome: SiteChromeData
 }) {
-  return (
-    <div
-      className={`relative overflow-hidden border border-white/20 bg-black ${className}`}
-      style={{ aspectRatio: `${width}/${height}` }}
-    >
-      <Image src={src} alt={alt} fill sizes="(max-width: 768px) 85vw, 320px" className="object-cover" />
-    </div>
-  )
-}
-
-export default function VisionSceneMobile({ data }: { data: VisionData }) {
   const slideshow =
     data.introSlideshowUrls && data.introSlideshowUrls.length > 0
       ? data.introSlideshowUrls
       : [data.introCenterUrl]
+
+  const galleryImages = useMemo(() => {
+    const urls = [
+      data.introLeftUrl,
+      ...slideshow,
+      data.introRightUrl,
+    ].filter((url): url is string => Boolean(url))
+    return [...new Set(urls)]
+  }, [data.introLeftUrl, data.introRightUrl, slideshow])
 
   return (
     <main className="bg-[#050505] font-serif text-white">
@@ -81,27 +77,14 @@ export default function VisionSceneMobile({ data }: { data: VisionData }) {
       </section>
 
       <section className="relative z-10 -mt-16 px-4 pb-20 md:px-8">
-        <div className="mx-auto flex max-w-lg flex-col gap-6">
-          {data.introLeftUrl && (
-            <FramedPhoto src={data.introLeftUrl} alt="" width={3} height={4} className="w-[72%] self-start" />
-          )}
-
-          <div className="-mx-2 flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory">
-            {slideshow.map((url, i) => (
-              <FramedPhoto
-                key={`${url}-${i}`}
-                src={url}
-                alt=""
-                width={3}
-                height={4}
-                className="h-64 w-48 shrink-0 snap-center"
-              />
-            ))}
-          </div>
-
-          {data.introRightUrl && (
-            <FramedPhoto src={data.introRightUrl} alt="" width={3} height={2} className="w-full" />
-          )}
+        <div className="mx-auto w-full max-w-md">
+          <AutoImageSlideshow
+            images={galleryImages}
+            alt="StoryCruz wedding photography"
+            intervalSec={4}
+            className="w-full shadow-2xl"
+            aspectClassName="aspect-[3/4] min-h-[320px]"
+          />
         </div>
       </section>
 
@@ -143,6 +126,7 @@ export default function VisionSceneMobile({ data }: { data: VisionData }) {
       </section>
 
       <ContactSection />
+      <Footer data={chrome} />
     </main>
   )
 }

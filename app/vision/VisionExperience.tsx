@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import { useEffect, useState } from 'react'
 import VisionSceneMobile from '@/app/vision/VisionSceneMobile'
 import type { VisionData } from '@/app/vision/types'
+import type { SiteChromeData } from '@/lib/site-chrome'
 
 const VisionScene = dynamic(() => import('@/app/vision/VisionScene'), {
   ssr: false,
@@ -24,11 +25,12 @@ function prefersLightExperience(): boolean {
 
 type Props = {
   data: VisionData
+  chrome: SiteChromeData
   /** From server User-Agent — avoids loading WebGL on phones before hydration. */
   initialLight?: boolean
 }
 
-export default function VisionExperience({ data, initialLight = false }: Props) {
+export default function VisionExperience({ data, chrome, initialLight = false }: Props) {
   const [useLight, setUseLight] = useState(initialLight)
 
   useEffect(() => {
@@ -40,8 +42,8 @@ export default function VisionExperience({ data, initialLight = false }: Props) 
   }, [])
 
   if (useLight) {
-    return <VisionSceneMobile data={data} />
+    return <VisionSceneMobile data={data} chrome={chrome} />
   }
 
-  return <VisionScene data={data} />
+  return <VisionScene data={data} chrome={chrome} />
 }
