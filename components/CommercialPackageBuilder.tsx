@@ -16,17 +16,31 @@ import {
   SquarePen,
   Layers,
   Clock,
+  Minus,
+  Camera,
+  Mic,
+  Lamp,
+  SlidersHorizontal,
 } from 'lucide-react'
 import BackgroundWater from '@/components/BackgroundWater'
 import {
   COMMERCIAL_FILMING,
+  COMMERCIAL_GEAR_OPTIONS,
+  COMMERCIAL_INCLUDED_CAMERAS,
+  COMMERCIAL_MAX_CAMERAS,
   COMMERCIAL_PRESETS,
   COMMERCIAL_PROJECT_TYPES,
+  clampExtraCameras,
+  commercialExtraCameraUnitLabel,
+  commercialExtraCameraUnitPrice,
+  commercialGearCredit,
+  commercialGearCreditLabel,
   estimateCommercialTotal,
   formatCad,
   getCommercialEditOptions,
   type CommercialEditId,
   type CommercialFilmingId,
+  type CommercialGearId,
   type CommercialProjectType,
   type CommercialCatalogOption,
 } from '@/lib/commercial-package-catalog'
@@ -35,10 +49,13 @@ function OptionCard({
   item,
   selected,
   onSelect,
+  priceFlashKey,
 }: {
   item: CommercialCatalogOption
   selected: boolean
   onSelect: () => void
+  /** Remounts the price line when filming duration changes so $400 ↔ $650 is obvious. */
+  priceFlashKey?: string
 }) {
   return (
     <li>
@@ -70,6 +87,7 @@ function OptionCard({
               ) : null}
             </span>
             <span
+              key={priceFlashKey ?? item.priceLabel}
               className={`text-xs shrink-0 tabular-nums ${
                 selected ? 'text-accent font-medium' : 'text-white/40'
               }`}
@@ -77,6 +95,14 @@ function OptionCard({
               {item.priceLabel}
             </span>
           </span>
+          {item.priceNote ? (
+            <span
+              key={`note-${priceFlashKey ?? item.priceNote}`}
+              className="block text-[11px] text-white/40 mt-1.5 leading-snug"
+            >
+              {item.priceNote}
+            </span>
+          ) : null}
           <span className="block text-sm text-white/55 mt-1 leading-snug">{item.description}</span>
           <ul className="mt-3 space-y-1.5">
             {item.included.map((line) => (
@@ -105,20 +131,41 @@ export default function CommercialPackageBuilder() {
 
   const [filmingId, setFilmingId] = useState<CommercialFilmingId | null>(null)
   const [editId, setEditId] = useState<CommercialEditId | null>(null)
+  const [extraCameras, setExtraCameras] = useState(0)
+  const [includeAudio, setIncludeAudio] = useState(true)
+  const [includeLighting, setIncludeLighting] = useState(true)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
+  const extras = clampExtraCameras(extraCameras)
+  const totalCameras = COMMERCIAL_INCLUDED_CAMERAS + extras
+  const maxExtra = COMMERCIAL_MAX_CAMERAS - COMMERCIAL_INCLUDED_CAMERAS
+
   const editOptions = useMemo(() => getCommercialEditOptions(filmingId), [filmingId])
-  const estimate = estimateCommercialTotal(filmingId, editId)
+  const estimate = estimateCommercialTotal({
+    filmingId,
+    editId,
+    extraCameras: extras,
+    includeAudio,
+    includeLighting,
+  })
 
   const selectedFilming = COMMERCIAL_FILMING.find((f) => f.id === filmingId) ?? null
   const selectedEdit = editOptions.find((e) => e.id === editId) ?? null
+  const extraCamerasSubtotal =
+    filmingId && extras > 0 ? extras * commercialExtraCameraUnitPrice(filmingId) : 0
+  const gearCredits =
+    (includeAudio ? 0 : commercialGearCredit('audio', filmingId)) +
+    (includeLighting ? 0 : commercialGearCredit('lighting', filmingId))
 
-  const activePresetId = COMMERCIAL_PRESETS.find(
-    (p) => p.filmingId === filmingId && p.editId === editId
-  )?.id
+  const gearIncluded = { audio: includeAudio, lighting: includeLighting }
+
+  const activePresetId =
+    extras === 0 && includeAudio && includeLighting
+      ? COMMERCIAL_PRESETS.find((p) => p.filmingId === filmingId && p.editId === editId)?.id
+      : undefined
 
   const canSubmit =
     companyName.trim() &&
@@ -133,6 +180,18 @@ export default function CommercialPackageBuilder() {
     if (!preset) return
     setFilmingId(preset.filmingId)
     setEditId(preset.editId)
+    setExtraCameras(0)
+    setIncludeAudio(true)
+    setIncludeLighting(true)
+  }
+
+  const toggleGear = (id: CommercialGearId, next: boolean) => {
+    if (id === 'audio') setIncludeAudio(next)
+    else setIncludeLighting(next)
+  }
+
+  const selectFilming = (id: CommercialFilmingId) => {
+    setFilmingId(id)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -161,6 +220,14 @@ export default function CommercialPackageBuilder() {
           editId,
           editTitle: selectedEdit?.title,
           editPrice: selectedEdit?.priceLabel,
+          extraCameras: extras,
+          totalCameras,
+          extraCamerasUnitPrice: filmingId
+            ? commercialExtraCameraUnitPrice(filmingId)
+            : undefined,
+          includeAudio,
+          includeLighting,
+          gearCredits,
           estimatedTotalCad: estimate,
         }),
       })
@@ -376,11 +443,15 @@ export default function CommercialPackageBuilder() {
                 <h2 className="text-xl font-serif text-white">Quick packages</h2>
               </div>
               <p className="text-sm text-white/50 mb-6 max-w-2xl">
-                One tap fills filming + edit. You can still adjust either column below.
+                One tap fills filming + edit (2 cameras). Add more cameras below if needed.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {COMMERCIAL_PRESETS.map((preset) => {
-                  const total = estimateCommercialTotal(preset.filmingId, preset.editId)
+                  const total = estimateCommercialTotal({
+                    filmingId: preset.filmingId,
+                    editId: preset.editId,
+                    extraCameras: 0,
+                  })
                   const active = activePresetId === preset.id
                   return (
                     <button
@@ -436,10 +507,154 @@ export default function CommercialPackageBuilder() {
                       key={item.id}
                       item={item}
                       selected={filmingId === item.id}
-                      onSelect={() => setFilmingId(item.id as CommercialFilmingId)}
+                      onSelect={() => selectFilming(item.id as CommercialFilmingId)}
                     />
                   ))}
                 </ul>
+
+                {/* Extra cameras */}
+                <div
+                  className={`mt-6 rounded-xl border px-4 py-4 transition-colors ${
+                    filmingId
+                      ? 'border-white/10 bg-white/[0.03]'
+                      : 'border-white/5 bg-white/[0.02] opacity-60'
+                  }`}
+                >
+                  <div className="flex items-start gap-3 mb-3">
+                    <Camera className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-white text-sm">Need more cameras?</p>
+                      <p className="text-[13px] text-white/50 mt-1 leading-snug">
+                        Packages include {COMMERCIAL_INCLUDED_CAMERAS} cameras. Add up to{' '}
+                        {maxExtra} more (max {COMMERCIAL_MAX_CAMERAS} total) for wider coverage or
+                        audience / cutaway angles.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="inline-flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={!filmingId || extras <= 0}
+                        onClick={() => setExtraCameras((n) => clampExtraCameras(n - 1))}
+                        className="h-9 w-9 rounded-full border border-white/20 bg-white/5 text-white/80 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed inline-flex items-center justify-center"
+                        aria-label="Remove extra camera"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="min-w-[7.5rem] text-center text-sm tabular-nums text-white">
+                        <span className="font-medium">{totalCameras}</span>
+                        <span className="text-white/45"> cameras</span>
+                        {extras > 0 ? (
+                          <span className="block text-[10px] uppercase tracking-wider text-accent/90 mt-0.5">
+                            +{extras} extra
+                          </span>
+                        ) : null}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={!filmingId || extras >= maxExtra}
+                        onClick={() => setExtraCameras((n) => clampExtraCameras(n + 1))}
+                        className="h-9 w-9 rounded-full border border-white/20 bg-white/5 text-white/80 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed inline-flex items-center justify-center"
+                        aria-label="Add extra camera"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <p className="text-xs text-white/45 tabular-nums text-right">
+                      {filmingId ? (
+                        extras > 0 ? (
+                          <>
+                            +{formatCad(extraCamerasSubtotal)}{' '}
+                            <span className="text-white/35">
+                              ({commercialExtraCameraUnitLabel(filmingId)})
+                            </span>
+                          </>
+                        ) : (
+                          <span>{commercialExtraCameraUnitLabel(filmingId)}</span>
+                        )
+                      ) : (
+                        <span>Select filming first</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Customize audio / lighting */}
+                <div
+                  className={`mt-4 rounded-xl border px-4 py-4 transition-colors ${
+                    filmingId
+                      ? 'border-white/10 bg-white/[0.03]'
+                      : 'border-white/5 bg-white/[0.02] opacity-60'
+                  }`}
+                >
+                  <div className="flex items-start gap-3 mb-4">
+                    <SlidersHorizontal className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-white text-sm">Customize audio & lighting</p>
+                      <p className="text-[13px] text-white/50 mt-1 leading-snug">
+                        Both are included by default. Turn either off if you&apos;re bringing your
+                        own — we&apos;ll credit that gear off the filming rate.
+                      </p>
+                    </div>
+                  </div>
+
+                  <ul className="space-y-3">
+                    {COMMERCIAL_GEAR_OPTIONS.map((gear) => {
+                      const included = gearIncluded[gear.id]
+                      const Icon = gear.id === 'audio' ? Mic : Lamp
+                      const creditLabel = commercialGearCreditLabel(gear.id, filmingId)
+                      return (
+                        <li key={gear.id}>
+                          <button
+                            type="button"
+                            disabled={!filmingId}
+                            onClick={() => toggleGear(gear.id, !included)}
+                            aria-pressed={included}
+                            className={`w-full text-left rounded-lg border px-3 py-3 flex gap-3 transition-all disabled:cursor-not-allowed ${
+                              included
+                                ? 'border-accent/50 bg-accent/10'
+                                : 'border-white/10 bg-black/20'
+                            }`}
+                          >
+                            <span
+                              className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border ${
+                                included
+                                  ? 'border-accent bg-accent text-white'
+                                  : 'border-white/20 bg-white/5 text-white/45'
+                              }`}
+                            >
+                              {included ? (
+                                <Check className="w-4 h-4" />
+                              ) : (
+                                <Icon className="w-4 h-4" />
+                              )}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                                <span className="font-medium text-white text-sm">{gear.title}</span>
+                                <span
+                                  className={`text-[11px] shrink-0 tabular-nums ${
+                                    included ? 'text-white/40' : 'text-accent'
+                                  }`}
+                                >
+                                  {included ? 'Included' : creditLabel}
+                                </span>
+                              </span>
+                              <span className="block text-[13px] text-white/50 mt-1 leading-snug">
+                                {included ? gear.includedLabel : gear.removedLabel}
+                              </span>
+                              <span className="block text-[11px] text-white/35 mt-1 leading-snug">
+                                {gear.description}
+                              </span>
+                            </span>
+                          </button>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </div>
               </motion.section>
 
               <motion.section
@@ -459,10 +674,19 @@ export default function CommercialPackageBuilder() {
                 </div>
                 {!filmingId ? (
                   <p className="text-sm text-white/40 italic mb-4">
-                    Select a filming duration first — basic edit pricing adjusts to half-day vs
-                    full-day.
+                    Select a filming duration first — basic edit pricing switches between{' '}
+                    <span className="text-white/55 not-italic">$400</span> (half-day) and{' '}
+                    <span className="text-white/55 not-italic">$650</span> (full-day).
                   </p>
-                ) : null}
+                ) : (
+                  <p className="text-sm text-white/45 mb-4">
+                    Basic Multi-Cam Edit is currently{' '}
+                    <span className="text-accent font-medium tabular-nums">
+                      {filmingId === 'full-day' ? '$650 + GST' : '$400 + GST'}
+                    </span>{' '}
+                    for your {filmingId === 'full-day' ? 'full-day' : 'half-day'} shoot.
+                  </p>
+                )}
                 <ul className="space-y-4">
                   {editOptions.map((item) => (
                     <OptionCard
@@ -470,6 +694,9 @@ export default function CommercialPackageBuilder() {
                       item={item}
                       selected={editId === item.id}
                       onSelect={() => setEditId(item.id as CommercialEditId)}
+                      priceFlashKey={
+                        item.id === 'basic-edit' ? `basic-${filmingId ?? 'none'}` : undefined
+                      }
                     />
                   ))}
                 </ul>
@@ -485,22 +712,39 @@ export default function CommercialPackageBuilder() {
                   exit={{ opacity: 0, y: 8 }}
                   className="bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-sm rounded-2xl border border-white/10 p-6 md:p-8 shadow-2xl mb-10"
                 >
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="rounded-xl bg-black/40 border border-white/10 px-4 py-3">
                       <p className="text-[10px] uppercase tracking-wider text-white/45 mb-1">
                         Filming & gear
                       </p>
                       <p className="text-lg font-medium text-accent tabular-nums">
                         {selectedFilming
-                          ? formatCad(selectedFilming.priceCad ?? 0)
+                          ? formatCad(
+                              (selectedFilming.priceCad ?? 0) +
+                                extraCamerasSubtotal -
+                                gearCredits
+                            )
                           : '—'}
                       </p>
+                      {gearCredits > 0 ? (
+                        <p className="text-[10px] text-white/40 mt-1 tabular-nums">
+                          Includes −{formatCad(gearCredits)} gear credit
+                          {extras > 0 ? ` · +${formatCad(extraCamerasSubtotal)} cameras` : ''}
+                        </p>
+                      ) : extras > 0 ? (
+                        <p className="text-[10px] text-white/40 mt-1 tabular-nums">
+                          Includes +{formatCad(extraCamerasSubtotal)} extra cameras
+                        </p>
+                      ) : null}
                     </div>
                     <div className="rounded-xl bg-black/40 border border-white/10 px-4 py-3">
                       <p className="text-[10px] uppercase tracking-wider text-white/45 mb-1">
                         Editing & post
                       </p>
-                      <p className="text-lg font-medium text-accent tabular-nums">
+                      <p
+                        key={`edit-est-${filmingId}-${editId}`}
+                        className="text-lg font-medium text-accent tabular-nums"
+                      >
                         {selectedEdit
                           ? selectedEdit.priceCad === 0
                             ? 'Included'
@@ -512,16 +756,17 @@ export default function CommercialPackageBuilder() {
                     </div>
                     <div className="rounded-xl bg-black/40 border border-white/10 px-4 py-3">
                       <p className="text-[10px] uppercase tracking-wider text-white/45 mb-1">
-                        Combined estimate
+                        Combined estimate (pre-tax)
                       </p>
                       <p className="text-lg font-medium text-white tabular-nums">
-                        {estimate != null ? `${formatCad(estimate)} + GST` : '—'}
+                        {estimate != null ? `${formatCad(estimate)}` : '—'}
                       </p>
+                      <p className="text-[10px] text-white/40 mt-1">GST added on final invoice</p>
                     </div>
                   </div>
                   <p className="text-[11px] text-white/40 mt-4 leading-relaxed">
                     Pre-tax estimate for planning. Final quote confirms crew size, venue access, and
-                    deliverable specs.
+                    deliverable specs. GST is not included in these totals.
                   </p>
                 </motion.div>
               )}
@@ -545,13 +790,53 @@ export default function CommercialPackageBuilder() {
                     Filming selection
                   </p>
                   {selectedFilming ? (
-                    <p className="text-sm text-white/85 flex gap-2">
-                      <Check className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-                      <span>
-                        <span className="font-medium text-white">{selectedFilming.title}</span>
-                        <span className="text-white/50"> · {selectedFilming.priceLabel}</span>
-                      </span>
-                    </p>
+                    <div className="space-y-2">
+                      <p className="text-sm text-white/85 flex gap-2">
+                        <Check className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                        <span>
+                          <span className="font-medium text-white">{selectedFilming.title}</span>
+                          <span className="text-white/50"> · {selectedFilming.priceLabel}</span>
+                        </span>
+                      </p>
+                      <p className="text-sm text-white/85 flex gap-2 pl-0">
+                        <Check className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                        <span>
+                          <span className="font-medium text-white">
+                            {totalCameras} camera{totalCameras === 1 ? '' : 's'}
+                          </span>
+                          <span className="text-white/50">
+                            {extras > 0
+                              ? ` · ${COMMERCIAL_INCLUDED_CAMERAS} included + ${extras} extra (${formatCad(extraCamerasSubtotal)})`
+                              : ` · ${COMMERCIAL_INCLUDED_CAMERAS} included`}
+                          </span>
+                        </span>
+                      </p>
+                      {COMMERCIAL_GEAR_OPTIONS.map((gear) => {
+                        const included = gearIncluded[gear.id]
+                        return (
+                          <p key={gear.id} className="text-sm text-white/85 flex gap-2">
+                            <Check
+                              className={`w-4 h-4 shrink-0 mt-0.5 ${
+                                included ? 'text-accent' : 'text-white/30'
+                              }`}
+                            />
+                            <span>
+                              <span
+                                className={`font-medium ${included ? 'text-white' : 'text-white/55'}`}
+                              >
+                                {included ? gear.includedLabel : gear.removedLabel}
+                              </span>
+                              {!included && filmingId ? (
+                                <span className="text-accent/90">
+                                  {' '}
+                                  · −{formatCad(commercialGearCredit(gear.id, filmingId))}
+                                </span>
+                              ) : null}
+                            </span>
+                          </p>
+                        )
+                      })}
+                    </div>
                   ) : (
                     <p className="text-sm text-white/35 italic">Nothing selected yet.</p>
                   )}
@@ -599,7 +884,10 @@ export default function CommercialPackageBuilder() {
                     Combined estimate (pre-tax)
                   </p>
                   <p className="text-2xl font-serif text-white tabular-nums mt-1">
-                    {estimate != null ? `${formatCad(estimate)} + GST` : '—'}
+                    {estimate != null ? formatCad(estimate) : '—'}
+                  </p>
+                  <p className="text-[11px] text-white/40 mt-1">
+                    GST will be added on the final invoice
                   </p>
                 </div>
                 <button

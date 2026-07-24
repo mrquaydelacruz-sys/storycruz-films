@@ -21,6 +21,104 @@ export type CommercialCatalogOption = {
   priceCad: number | null
   priceLabel: string
   included: string[]
+  /** Optional secondary line under the price (e.g. which shoot length applies). */
+  priceNote?: string
+}
+
+export function formatCad(amount: number): string {
+  return `$${Math.round(amount).toLocaleString('en-CA')}`
+}
+
+/** Included in every filming package before add-ons. */
+export const COMMERCIAL_INCLUDED_CAMERAS = 2
+
+/** Max total cameras a client can select in the builder (included + extras). */
+export const COMMERCIAL_MAX_CAMERAS = 4
+
+/**
+ * Extra camera + operator / angle, priced by shoot length.
+ * Half-day: $300 · Full-day: $500 (pre-tax) per additional camera.
+ */
+export function commercialExtraCameraUnitPrice(
+  filmingId: CommercialFilmingId | null
+): number {
+  if (filmingId === 'full-day') return 500
+  return 300
+}
+
+export function commercialExtraCameraUnitLabel(
+  filmingId: CommercialFilmingId | null
+): string {
+  if (filmingId === 'full-day') return '$500 + GST each'
+  if (filmingId === 'half-day') return '$300 + GST each'
+  return '$300 – $500 + GST each'
+}
+
+export function clampExtraCameras(count: number): number {
+  const maxExtra = COMMERCIAL_MAX_CAMERAS - COMMERCIAL_INCLUDED_CAMERAS
+  if (!Number.isFinite(count) || count < 0) return 0
+  return Math.min(maxExtra, Math.floor(count))
+}
+
+/** Optional gear included by default — clients can remove for a credit if they bring their own. */
+export type CommercialGearId = 'audio' | 'lighting'
+
+export type CommercialGearOption = {
+  id: CommercialGearId
+  title: string
+  description: string
+  /** Shown when the item is included. */
+  includedLabel: string
+  /** Shown when the client opts out (bringing their own). */
+  removedLabel: string
+  /** Pre-tax credit when removed, by shoot length. */
+  creditHalfDay: number
+  creditFullDay: number
+}
+
+export const COMMERCIAL_GEAR_OPTIONS: CommercialGearOption[] = [
+  {
+    id: 'audio',
+    title: 'Production audio',
+    description:
+      'Lapel mics + room audio for up to 4 speakers. Uncheck if you already have a house or AV audio feed.',
+    includedLabel: 'Professional lapel + room audio for up to 4 speakers',
+    removedLabel: 'Client provides audio / house feed',
+    creditHalfDay: 100,
+    creditFullDay: 150,
+  },
+  {
+    id: 'lighting',
+    title: 'Basic lighting',
+    description:
+      'Simple key / fill for seated interviews and meetings. Uncheck if the room is already lit or you supply lights.',
+    includedLabel: 'Basic lighting for seated interview / meeting setups',
+    removedLabel: 'Client provides lighting',
+    creditHalfDay: 75,
+    creditFullDay: 100,
+  },
+]
+
+export function commercialGearCredit(
+  gearId: CommercialGearId,
+  filmingId: CommercialFilmingId | null
+): number {
+  const gear = COMMERCIAL_GEAR_OPTIONS.find((g) => g.id === gearId)
+  if (!gear || !filmingId) return 0
+  return filmingId === 'full-day' ? gear.creditFullDay : gear.creditHalfDay
+}
+
+export function commercialGearCreditLabel(
+  gearId: CommercialGearId,
+  filmingId: CommercialFilmingId | null
+): string {
+  if (!filmingId) {
+    const gear = COMMERCIAL_GEAR_OPTIONS.find((g) => g.id === gearId)
+    if (!gear) return ''
+    return `−$${gear.creditHalfDay} – $${gear.creditFullDay} if removed`
+  }
+  const credit = commercialGearCredit(gearId, filmingId)
+  return `−${formatCad(credit)} credit if removed`
 }
 
 /** Filming & gear — pick one. */
@@ -30,14 +128,13 @@ export const COMMERCIAL_FILMING: CommercialCatalogOption[] = [
     title: 'Half-Day',
     subtitle: 'Up to 4 hours',
     description:
-      'Ideal for board meetings, panels, and short corporate captures with a compact crew.',
+      'Ideal for board meetings, panels, and short corporate captures with a compact crew. Audio and lighting included by default — customize below if you bring your own.',
     priceCad: 800,
     priceLabel: '$800 + GST',
     included: [
       '2 camera operators / 2-camera setup',
       '2 camera angles',
-      'Professional lapel + room audio for up to 4 speakers',
-      'Basic lighting for seated interview / meeting setups',
+      'Audio + lighting included (customizable below)',
     ],
   },
   {
@@ -45,21 +142,20 @@ export const COMMERCIAL_FILMING: CommercialCatalogOption[] = [
     title: 'Full-Day',
     subtitle: 'Up to 8 hours',
     description:
-      'Best when the agenda runs long, you need multiple segments, or want buffer for setup and resets.',
+      'Best when the agenda runs long, you need multiple segments, or want buffer for setup and resets. Audio and lighting included by default — customize below if you bring your own.',
     priceCad: 1600,
     priceLabel: '$1,600 + GST',
     included: [
       '2 camera operators / 2-camera setup',
       '2 camera angles',
-      'Professional lapel + room audio for up to 4 speakers',
-      'Basic lighting for seated interview / meeting setups',
+      'Audio + lighting included (customizable below)',
       'Full production day coverage',
     ],
   },
 ]
 
 /**
- * Editing prices scale slightly with shoot length (matches typical commercial baselines).
+ * Editing prices scale with shoot length (matches typical commercial baselines).
  * Raw delivery stays included either way.
  */
 export function commercialBasicEditPrice(filmingId: CommercialFilmingId | null): number {
@@ -77,6 +173,9 @@ export function getCommercialEditOptions(
   filmingId: CommercialFilmingId | null
 ): CommercialCatalogOption[] {
   const basicPrice = filmingId ? commercialBasicEditPrice(filmingId) : null
+  const durationWord =
+    filmingId === 'full-day' ? 'full-day' : filmingId === 'half-day' ? 'half-day' : null
+
   return [
     {
       id: 'raw',
@@ -97,9 +196,12 @@ export function getCommercialEditOptions(
       title: 'Basic Multi-Cam Edit',
       subtitle: 'Most clients choose this',
       description:
-        'Clean, presentation-ready cut: camera switching, trims, audio leveling, and light color correction.',
+        'Clean, presentation-ready cut: camera switching, trims, audio leveling, and light color correction. Covers all cameras in your filming selection.',
       priceCad: basicPrice,
       priceLabel: commercialBasicEditLabel(filmingId),
+      priceNote: durationWord
+        ? `Applies to your ${durationWord} shoot · Half-day $400 · Full-day $650`
+        : 'Select half-day or full-day filming to lock this rate · Half-day $400 · Full-day $650',
       included: [
         'Multi-cam angle switching',
         'Trimming & basic cuts',
@@ -149,21 +251,51 @@ export const COMMERCIAL_PRESETS: CommercialPreset[] = [
   },
 ]
 
-export function estimateCommercialTotal(
-  filmingId: CommercialFilmingId | null,
+export type CommercialEstimateInput = {
+  filmingId: CommercialFilmingId | null
   editId: CommercialEditId | null
+  /** Cameras beyond the included 2. */
+  extraCameras?: number
+  /** Gear kept from the package (default: both included). */
+  includeAudio?: boolean
+  includeLighting?: boolean
+}
+
+export function estimateCommercialTotal(
+  filmingIdOrInput: CommercialFilmingId | null | CommercialEstimateInput,
+  editId?: CommercialEditId | null,
+  extraCameras = 0
 ): number | null {
+  const input: CommercialEstimateInput =
+    filmingIdOrInput != null && typeof filmingIdOrInput === 'object'
+      ? filmingIdOrInput
+      : {
+          filmingId: filmingIdOrInput as CommercialFilmingId | null,
+          editId: editId ?? null,
+          extraCameras,
+        }
+
+  const { filmingId } = input
   if (!filmingId) return null
   const filming = COMMERCIAL_FILMING.find((f) => f.id === filmingId)
   if (!filming || filming.priceCad == null) return null
 
+  const extras = clampExtraCameras(input.extraCameras ?? 0)
+  const includeAudio = input.includeAudio !== false
+  const includeLighting = input.includeLighting !== false
+
   let total = filming.priceCad
-  if (editId === 'basic-edit') {
+  if (extras > 0) {
+    total += extras * commercialExtraCameraUnitPrice(filmingId)
+  }
+  if (!includeAudio) {
+    total -= commercialGearCredit('audio', filmingId)
+  }
+  if (!includeLighting) {
+    total -= commercialGearCredit('lighting', filmingId)
+  }
+  if (input.editId === 'basic-edit') {
     total += commercialBasicEditPrice(filmingId)
   }
-  return total
-}
-
-export function formatCad(amount: number): string {
-  return `$${Math.round(amount).toLocaleString('en-CA')}`
+  return Math.max(0, total)
 }

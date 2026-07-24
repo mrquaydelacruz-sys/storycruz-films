@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import {
   COMMERCIAL_FILMING,
+  COMMERCIAL_GEAR_OPTIONS,
+  COMMERCIAL_INCLUDED_CAMERAS,
   COMMERCIAL_PROJECT_TYPES,
+  clampExtraCameras,
+  commercialExtraCameraUnitPrice,
+  commercialGearCredit,
   estimateCommercialTotal,
   formatCad,
   getCommercialEditOptions,
@@ -35,6 +40,11 @@ export async function POST(request: NextRequest) {
     const notes = typeof body.notes === 'string' ? body.notes.trim() : ''
     const filmingId = body.filmingId as CommercialFilmingId | null
     const editId = body.editId as CommercialEditId | null
+    const extras = clampExtraCameras(
+      typeof body.extraCameras === 'number' ? body.extraCameras : Number(body.extraCameras) || 0
+    )
+    const includeAudio = body.includeAudio !== false
+    const includeLighting = body.includeLighting !== false
 
     if (!companyName || !contactPerson || !email || !projectType || !filmingId || !editId) {
       return NextResponse.json(
@@ -52,8 +62,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const estimate = estimateCommercialTotal(filmingId, editId)
+    const estimate = estimateCommercialTotal({
+      filmingId,
+      editId,
+      extraCameras: extras,
+      includeAudio,
+      includeLighting,
+    })
+    const totalCameras = COMMERCIAL_INCLUDED_CAMERAS + extras
+    const extraUnit = commercialExtraCameraUnitPrice(filmingId)
     const projectLabel = PROJECT_LABEL[projectType] ?? String(projectType)
+
+    const gearLines = COMMERCIAL_GEAR_OPTIONS.map((gear) => {
+      const included = gear.id === 'audio' ? includeAudio : includeLighting
+      if (included) return `${gear.title}: included`
+      const credit = commercialGearCredit(gear.id, filmingId)
+      return `${gear.title}: client provides (credit −${formatCad(credit)})`
+    })
 
     const messageParts = [
       '[Corporate package builder — /commercial/package-builder]',
@@ -66,8 +91,13 @@ export async function POST(request: NextRequest) {
       durationHint && `Approx. duration: ${durationHint}`,
       '',
       `Filming & gear: ${filming.title} (${filming.priceLabel})`,
+      extras > 0
+        ? `Cameras: ${totalCameras} total (${COMMERCIAL_INCLUDED_CAMERAS} included + ${extras} extra @ ${formatCad(extraUnit)} each)`
+        : `Cameras: ${totalCameras} (package included)`,
+      ...gearLines,
       `Editing & post: ${edit.title} (${edit.priceLabel})`,
-      estimate != null && `Approx. combined (pre-tax): ${formatCad(estimate)} + GST`,
+      estimate != null &&
+        `Approx. combined (pre-tax): ${formatCad(estimate)} — GST added on final invoice`,
       notes && `\nNotes:\n${notes}`,
     ].filter(Boolean)
 
