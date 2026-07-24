@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
     const extras = clampExtraCameras(
       typeof body.extraCameras === 'number' ? body.extraCameras : Number(body.extraCameras) || 0
     )
+    const includeCameras = body.includeCameras !== false
     const includeAudio = body.includeAudio !== false
     const includeLighting = body.includeLighting !== false
 
@@ -66,6 +67,7 @@ export async function POST(request: NextRequest) {
       filmingId,
       editId,
       extraCameras: extras,
+      includeCameras,
       includeAudio,
       includeLighting,
     })
@@ -73,8 +75,14 @@ export async function POST(request: NextRequest) {
     const extraUnit = commercialExtraCameraUnitPrice(filmingId)
     const projectLabel = PROJECT_LABEL[projectType] ?? String(projectType)
 
+    const gearIncludedMap = {
+      cameras: includeCameras,
+      audio: includeAudio,
+      lighting: includeLighting,
+    } as const
+
     const gearLines = COMMERCIAL_GEAR_OPTIONS.flatMap((gear) => {
-      const included = gear.id === 'audio' ? includeAudio : includeLighting
+      const included = gearIncludedMap[gear.id]
       if (included) return [`${gear.title}: included`]
       const credit = commercialGearCredit(gear.id, filmingId)
       return [
@@ -94,9 +102,13 @@ export async function POST(request: NextRequest) {
       durationHint && `Approx. duration: ${durationHint}`,
       '',
       `Filming & gear: ${filming.title} (${filming.priceLabel})`,
-      extras > 0
-        ? `Cameras: ${totalCameras} total (${COMMERCIAL_INCLUDED_CAMERAS} included + ${extras} extra @ ${formatCad(extraUnit)} each)`
-        : `Cameras: ${totalCameras} (package included)`,
+      includeCameras
+        ? extras > 0
+          ? `Cameras: ${totalCameras} total (${COMMERCIAL_INCLUDED_CAMERAS} included + ${extras} extra @ ${formatCad(extraUnit)} each)`
+          : `Cameras: ${totalCameras} (package included)`
+        : extras > 0
+          ? `Cameras: client-supplied · ${totalCameras} operators/angles (${COMMERCIAL_INCLUDED_CAMERAS} base + ${extras} extra operators @ ${formatCad(extraUnit)} each)`
+          : `Cameras: client-supplied · ${COMMERCIAL_INCLUDED_CAMERAS} operators (crew labor included)`,
       ...gearLines,
       `Editing & post: ${edit.title} (${edit.priceLabel})`,
       estimate != null &&

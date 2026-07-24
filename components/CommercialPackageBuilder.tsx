@@ -132,6 +132,7 @@ export default function CommercialPackageBuilder() {
   const [filmingId, setFilmingId] = useState<CommercialFilmingId | null>(null)
   const [editId, setEditId] = useState<CommercialEditId | null>(null)
   const [extraCameras, setExtraCameras] = useState(0)
+  const [includeCameras, setIncludeCameras] = useState(true)
   const [includeAudio, setIncludeAudio] = useState(true)
   const [includeLighting, setIncludeLighting] = useState(true)
 
@@ -148,6 +149,7 @@ export default function CommercialPackageBuilder() {
     filmingId,
     editId,
     extraCameras: extras,
+    includeCameras,
     includeAudio,
     includeLighting,
   })
@@ -157,13 +159,18 @@ export default function CommercialPackageBuilder() {
   const extraCamerasSubtotal =
     filmingId && extras > 0 ? extras * commercialExtraCameraUnitPrice(filmingId) : 0
   const gearCredits =
+    (includeCameras ? 0 : commercialGearCredit('cameras', filmingId)) +
     (includeAudio ? 0 : commercialGearCredit('audio', filmingId)) +
     (includeLighting ? 0 : commercialGearCredit('lighting', filmingId))
 
-  const gearIncluded = { audio: includeAudio, lighting: includeLighting }
+  const gearIncluded: Record<CommercialGearId, boolean> = {
+    cameras: includeCameras,
+    audio: includeAudio,
+    lighting: includeLighting,
+  }
 
   const activePresetId =
-    extras === 0 && includeAudio && includeLighting
+    extras === 0 && includeCameras && includeAudio && includeLighting
       ? COMMERCIAL_PRESETS.find((p) => p.filmingId === filmingId && p.editId === editId)?.id
       : undefined
 
@@ -181,12 +188,14 @@ export default function CommercialPackageBuilder() {
     setFilmingId(preset.filmingId)
     setEditId(preset.editId)
     setExtraCameras(0)
+    setIncludeCameras(true)
     setIncludeAudio(true)
     setIncludeLighting(true)
   }
 
   const toggleGear = (id: CommercialGearId, next: boolean) => {
-    if (id === 'audio') setIncludeAudio(next)
+    if (id === 'cameras') setIncludeCameras(next)
+    else if (id === 'audio') setIncludeAudio(next)
     else setIncludeLighting(next)
   }
 
@@ -225,6 +234,7 @@ export default function CommercialPackageBuilder() {
           extraCamerasUnitPrice: filmingId
             ? commercialExtraCameraUnitPrice(filmingId)
             : undefined,
+          includeCameras,
           includeAudio,
           includeLighting,
           gearCredits,
@@ -512,78 +522,9 @@ export default function CommercialPackageBuilder() {
                   ))}
                 </ul>
 
-                {/* Extra cameras */}
+                {/* Customize cameras / audio / lighting */}
                 <div
                   className={`mt-6 rounded-xl border px-4 py-4 transition-colors ${
-                    filmingId
-                      ? 'border-white/10 bg-white/[0.03]'
-                      : 'border-white/5 bg-white/[0.02] opacity-60'
-                  }`}
-                >
-                  <div className="flex items-start gap-3 mb-3">
-                    <Camera className="w-5 h-5 text-accent shrink-0 mt-0.5" />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-white text-sm">Need more cameras?</p>
-                      <p className="text-[13px] text-white/50 mt-1 leading-snug">
-                        Packages include {COMMERCIAL_INCLUDED_CAMERAS} cameras. Add up to{' '}
-                        {maxExtra} more (max {COMMERCIAL_MAX_CAMERAS} total) for wider coverage or
-                        audience / cutaway angles.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="inline-flex items-center gap-2">
-                      <button
-                        type="button"
-                        disabled={!filmingId || extras <= 0}
-                        onClick={() => setExtraCameras((n) => clampExtraCameras(n - 1))}
-                        className="h-9 w-9 rounded-full border border-white/20 bg-white/5 text-white/80 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed inline-flex items-center justify-center"
-                        aria-label="Remove extra camera"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="min-w-[7.5rem] text-center text-sm tabular-nums text-white">
-                        <span className="font-medium">{totalCameras}</span>
-                        <span className="text-white/45"> cameras</span>
-                        {extras > 0 ? (
-                          <span className="block text-[10px] uppercase tracking-wider text-accent/90 mt-0.5">
-                            +{extras} extra
-                          </span>
-                        ) : null}
-                      </span>
-                      <button
-                        type="button"
-                        disabled={!filmingId || extras >= maxExtra}
-                        onClick={() => setExtraCameras((n) => clampExtraCameras(n + 1))}
-                        className="h-9 w-9 rounded-full border border-white/20 bg-white/5 text-white/80 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed inline-flex items-center justify-center"
-                        aria-label="Add extra camera"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <p className="text-xs text-white/45 tabular-nums text-right">
-                      {filmingId ? (
-                        extras > 0 ? (
-                          <>
-                            +{formatCad(extraCamerasSubtotal)}{' '}
-                            <span className="text-white/35">
-                              ({commercialExtraCameraUnitLabel(filmingId)})
-                            </span>
-                          </>
-                        ) : (
-                          <span>{commercialExtraCameraUnitLabel(filmingId)}</span>
-                        )
-                      ) : (
-                        <span>Select filming first</span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Customize audio / lighting */}
-                <div
-                  className={`mt-4 rounded-xl border px-4 py-4 transition-colors ${
                     filmingId
                       ? 'border-white/10 bg-white/[0.03]'
                       : 'border-white/5 bg-white/[0.02] opacity-60'
@@ -592,10 +533,11 @@ export default function CommercialPackageBuilder() {
                   <div className="flex items-start gap-3 mb-4">
                     <SlidersHorizontal className="w-5 h-5 text-accent shrink-0 mt-0.5" />
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-white text-sm">Customize audio & lighting</p>
+                      <p className="font-medium text-white text-sm">Customize cameras, audio & lighting</p>
                       <p className="text-[13px] text-white/50 mt-1 leading-snug">
-                        Both are included by default. Turn either off if you&apos;re bringing your
-                        own — we&apos;ll credit that gear off the filming rate.
+                        All three are included by default. Turn any off if you&apos;re bringing your
+                        own — we&apos;ll credit that gear off the filming rate. Operator labor stays
+                        included when you supply cameras.
                       </p>
                     </div>
                   </div>
@@ -603,7 +545,8 @@ export default function CommercialPackageBuilder() {
                   <ul className="space-y-3">
                     {COMMERCIAL_GEAR_OPTIONS.map((gear) => {
                       const included = gearIncluded[gear.id]
-                      const Icon = gear.id === 'audio' ? Mic : Lamp
+                      const Icon =
+                        gear.id === 'cameras' ? Camera : gear.id === 'audio' ? Mic : Lamp
                       const creditLabel = commercialGearCreditLabel(gear.id, filmingId)
                       return (
                         <li key={gear.id}>
@@ -662,6 +605,91 @@ export default function CommercialPackageBuilder() {
                       )
                     })}
                   </ul>
+                </div>
+
+                {/* Extra cameras / operators */}
+                <div
+                  className={`mt-4 rounded-xl border px-4 py-4 transition-colors ${
+                    filmingId
+                      ? 'border-white/10 bg-white/[0.03]'
+                      : 'border-white/5 bg-white/[0.02] opacity-60'
+                  }`}
+                >
+                  <div className="flex items-start gap-3 mb-3">
+                    <Camera className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-white text-sm">
+                        {includeCameras
+                          ? 'Need more cameras?'
+                          : 'Need more operators / angles?'}
+                      </p>
+                      <p className="text-[13px] text-white/50 mt-1 leading-snug">
+                        {includeCameras ? (
+                          <>
+                            Packages include {COMMERCIAL_INCLUDED_CAMERAS} cameras with operators.
+                            Add up to {maxExtra} more (max {COMMERCIAL_MAX_CAMERAS} total) for wider
+                            coverage or audience / cutaway angles.
+                          </>
+                        ) : (
+                          <>
+                            Crew labor for {COMMERCIAL_INCLUDED_CAMERAS} operators stays included.
+                            Add up to {maxExtra} more operators / angles — you supply those camera
+                            bodies as well (or note mixed gear below).
+                          </>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="inline-flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={!filmingId || extras <= 0}
+                        onClick={() => setExtraCameras((n) => clampExtraCameras(n - 1))}
+                        className="h-9 w-9 rounded-full border border-white/20 bg-white/5 text-white/80 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed inline-flex items-center justify-center"
+                        aria-label={includeCameras ? 'Remove extra camera' : 'Remove extra operator'}
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="min-w-[7.5rem] text-center text-sm tabular-nums text-white">
+                        <span className="font-medium">{totalCameras}</span>
+                        <span className="text-white/45">
+                          {includeCameras ? ' cameras' : ' operators'}
+                        </span>
+                        {extras > 0 ? (
+                          <span className="block text-[10px] uppercase tracking-wider text-accent/90 mt-0.5">
+                            +{extras} extra
+                          </span>
+                        ) : null}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={!filmingId || extras >= maxExtra}
+                        onClick={() => setExtraCameras((n) => clampExtraCameras(n + 1))}
+                        className="h-9 w-9 rounded-full border border-white/20 bg-white/5 text-white/80 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed inline-flex items-center justify-center"
+                        aria-label={includeCameras ? 'Add extra camera' : 'Add extra operator'}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <p className="text-xs text-white/45 tabular-nums text-right">
+                      {filmingId ? (
+                        extras > 0 ? (
+                          <>
+                            +{formatCad(extraCamerasSubtotal)}{' '}
+                            <span className="text-white/35">
+                              ({commercialExtraCameraUnitLabel(filmingId)})
+                            </span>
+                          </>
+                        ) : (
+                          <span>{commercialExtraCameraUnitLabel(filmingId)}</span>
+                        )
+                      ) : (
+                        <span>Select filming first</span>
+                      )}
+                    </p>
+                  </div>
                 </div>
               </motion.section>
 
@@ -737,11 +765,14 @@ export default function CommercialPackageBuilder() {
                       {gearCredits > 0 ? (
                         <p className="text-[10px] text-white/40 mt-1 tabular-nums">
                           Includes −{formatCad(gearCredits)} gear credit
-                          {extras > 0 ? ` · +${formatCad(extraCamerasSubtotal)} cameras` : ''}
+                          {extras > 0
+                            ? ` · +${formatCad(extraCamerasSubtotal)} ${includeCameras ? 'cameras' : 'operators'}`
+                            : ''}
                         </p>
                       ) : extras > 0 ? (
                         <p className="text-[10px] text-white/40 mt-1 tabular-nums">
-                          Includes +{formatCad(extraCamerasSubtotal)} extra cameras
+                          Includes +{formatCad(extraCamerasSubtotal)} extra{' '}
+                          {includeCameras ? 'cameras' : 'operators'}
                         </p>
                       ) : null}
                     </div>
@@ -810,12 +841,18 @@ export default function CommercialPackageBuilder() {
                         <Check className="w-4 h-4 text-accent shrink-0 mt-0.5" />
                         <span>
                           <span className="font-medium text-white">
-                            {totalCameras} camera{totalCameras === 1 ? '' : 's'}
+                            {totalCameras} operator
+                            {totalCameras === 1 ? '' : 's'} / angle
+                            {totalCameras === 1 ? '' : 's'}
                           </span>
                           <span className="text-white/50">
-                            {extras > 0
-                              ? ` · ${COMMERCIAL_INCLUDED_CAMERAS} included + ${extras} extra (${formatCad(extraCamerasSubtotal)})`
-                              : ` · ${COMMERCIAL_INCLUDED_CAMERAS} included`}
+                            {includeCameras
+                              ? extras > 0
+                                ? ` · ${COMMERCIAL_INCLUDED_CAMERAS} cameras included + ${extras} extra (${formatCad(extraCamerasSubtotal)})`
+                                : ` · ${COMMERCIAL_INCLUDED_CAMERAS} production cameras included`
+                              : extras > 0
+                                ? ` · client cameras · +${extras} extra operators (${formatCad(extraCamerasSubtotal)})`
+                                : ' · client-supplied cameras · crew labor included'}
                           </span>
                         </span>
                       </p>
