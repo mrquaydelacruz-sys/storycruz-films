@@ -71,6 +71,8 @@ export type CommercialGearOption = {
   includedLabel: string
   /** Shown when the client opts out (bringing their own). */
   removedLabel: string
+  /** Disclaimer shown when client opts out. */
+  removedDisclaimer: string
   /** Pre-tax credit when removed, by shoot length. */
   creditHalfDay: number
   creditFullDay: number
@@ -84,6 +86,8 @@ export const COMMERCIAL_GEAR_OPTIONS: CommercialGearOption[] = [
       'Lapel mics + room audio for up to 4 speakers. Uncheck if you already have a house or AV audio feed.',
     includedLabel: 'Professional lapel + room audio for up to 4 speakers',
     removedLabel: 'Client provides audio / house feed',
+    removedDisclaimer:
+      "Note: If using client-supplied audio, final audio quality relies on the venue / in-house technician's feed.",
     creditHalfDay: 100,
     creditFullDay: 150,
   },
@@ -94,6 +98,8 @@ export const COMMERCIAL_GEAR_OPTIONS: CommercialGearOption[] = [
       'Simple key / fill for seated interviews and meetings. Uncheck if the room is already lit or you supply lights.',
     includedLabel: 'Basic lighting for seated interview / meeting setups',
     removedLabel: 'Client provides lighting',
+    removedDisclaimer:
+      'Note: If using client-supplied lighting, look and consistency rely on whoever is controlling those lights on site.',
     creditHalfDay: 75,
     creditFullDay: 100,
   },

@@ -648,6 +648,14 @@ export default function CommercialPackageBuilder() {
                               <span className="block text-[11px] text-white/35 mt-1 leading-snug">
                                 {gear.description}
                               </span>
+                              {!included ? (
+                                <span
+                                  role="note"
+                                  className="mt-2 block rounded-md border border-white/10 bg-black/30 px-2.5 py-2 text-[11px] leading-snug text-white/65"
+                                >
+                                  {gear.removedDisclaimer}
+                                </span>
+                              ) : null}
                             </span>
                           </button>
                         </li>

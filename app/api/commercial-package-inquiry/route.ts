@@ -73,11 +73,14 @@ export async function POST(request: NextRequest) {
     const extraUnit = commercialExtraCameraUnitPrice(filmingId)
     const projectLabel = PROJECT_LABEL[projectType] ?? String(projectType)
 
-    const gearLines = COMMERCIAL_GEAR_OPTIONS.map((gear) => {
+    const gearLines = COMMERCIAL_GEAR_OPTIONS.flatMap((gear) => {
       const included = gear.id === 'audio' ? includeAudio : includeLighting
-      if (included) return `${gear.title}: included`
+      if (included) return [`${gear.title}: included`]
       const credit = commercialGearCredit(gear.id, filmingId)
-      return `${gear.title}: client provides (credit −${formatCad(credit)})`
+      return [
+        `${gear.title}: client provides (credit −${formatCad(credit)})`,
+        `  ${gear.removedDisclaimer}`,
+      ]
     })
 
     const messageParts = [
