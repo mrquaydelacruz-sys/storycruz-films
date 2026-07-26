@@ -2372,9 +2372,10 @@ export default function TestingPackageBuilder({
                   Figures here are <span className="text-white/60">ballpark estimates</span> before
                   tax (GST not included). We take the first <span className="text-white/60">$</span>{' '}
                   amount in each package or line where shown. Unchecking optional lines may lower the
-                  package estimate when those lines carry a credit. Where a tier allows it, you may also
-                  deduct up to {PACKAGE_BUILDER_COVERAGE_HOUR_DEDUCTION_CAP} coverage hours (credit per
-                  hour is set on that listing). Enhancements you add from the
+                  package estimate when those lines carry a credit. You may also deduct up to{' '}
+                  {PACKAGE_BUILDER_COVERAGE_HOUR_DEDUCTION_CAP} coverage hours on photography,
+                  cinematography, and photo + film packages (credit per hour is shown on each card).
+                  Enhancements you add from the
                   dropdown roll into the photography column, cinematography column,{' '}
                   <span className="text-white/60">photo + film bundles</span> (when listed), or the
                   combined total depending on each item&apos;s rollup. Optional quantity fields multiply
@@ -2488,16 +2489,31 @@ export default function TestingPackageBuilder({
                                   <span className="text-white/50 font-normal"> · {item.price}</span>
                                 ) : null}
                                 {(() => {
-                                  const { subtotal } = computePackageEstimate(
+                                  const hrs = photoCoverageHourDeduction[item.id] ?? 0
+                                  const subtotal = packageSubtotalAfterCoverageHourDeduction(
                                     item,
-                                    photoLineExclusions[item.id] ?? emptyExcluded
+                                    photoLineExclusions[item.id] ?? emptyExcluded,
+                                    hrs
                                   )
-                                  return subtotal != null ? (
-                                    <span className="text-accent/90 font-normal">
-                                      {' '}
-                                      · Est. {formatMoneySimple(subtotal)}
-                                    </span>
-                                  ) : null
+                                  const hrsNorm = clampCoverageHoursDeducted(hrs)
+                                  return (
+                                    <>
+                                      {subtotal != null ? (
+                                        <span className="text-accent/90 font-normal">
+                                          {' '}
+                                          · Est. {formatMoneySimple(subtotal)}
+                                        </span>
+                                      ) : null}
+                                      {hrsNorm > 0 ? (
+                                        <span className="block text-[11px] text-sky-200/80 mt-0.5 font-normal">
+                                          Coverage −{hrsNorm} hr
+                                          {item.coverageHourDeductionRatePerHour?.trim()
+                                            ? ` @ ${item.coverageHourDeductionRatePerHour.trim()}`
+                                            : ''}
+                                        </span>
+                                      ) : null}
+                                    </>
+                                  )
                                 })()}
                               </span>
                             </span>
@@ -2597,16 +2613,31 @@ export default function TestingPackageBuilder({
                                   <span className="text-white/50 font-normal"> · {item.price}</span>
                                 ) : null}
                                 {(() => {
-                                  const { subtotal } = computePackageEstimate(
+                                  const hrs = videoCoverageHourDeduction[item.id] ?? 0
+                                  const subtotal = packageSubtotalAfterCoverageHourDeduction(
                                     item,
-                                    videoLineExclusions[item.id] ?? emptyExcluded
+                                    videoLineExclusions[item.id] ?? emptyExcluded,
+                                    hrs
                                   )
-                                  return subtotal != null ? (
-                                    <span className="text-accent/90 font-normal">
-                                      {' '}
-                                      · Est. {formatMoneySimple(subtotal)}
-                                    </span>
-                                  ) : null
+                                  const hrsNorm = clampCoverageHoursDeducted(hrs)
+                                  return (
+                                    <>
+                                      {subtotal != null ? (
+                                        <span className="text-accent/90 font-normal">
+                                          {' '}
+                                          · Est. {formatMoneySimple(subtotal)}
+                                        </span>
+                                      ) : null}
+                                      {hrsNorm > 0 ? (
+                                        <span className="block text-[11px] text-sky-200/80 mt-0.5 font-normal">
+                                          Coverage −{hrsNorm} hr
+                                          {item.coverageHourDeductionRatePerHour?.trim()
+                                            ? ` @ ${item.coverageHourDeductionRatePerHour.trim()}`
+                                            : ''}
+                                        </span>
+                                      ) : null}
+                                    </>
+                                  )
                                 })()}
                               </span>
                             </span>
@@ -2709,16 +2740,31 @@ export default function TestingPackageBuilder({
                                   <span className="text-white/50 font-normal"> · {item.price}</span>
                                 ) : null}
                                 {(() => {
-                                  const { subtotal } = computePackageEstimate(
+                                  const hrs = photoCoverageHourDeduction[item.id] ?? 0
+                                  const subtotal = packageSubtotalAfterCoverageHourDeduction(
                                     item,
-                                    photoLineExclusions[item.id] ?? emptyExcluded
+                                    photoLineExclusions[item.id] ?? emptyExcluded,
+                                    hrs
                                   )
-                                  return subtotal != null ? (
-                                    <span className="text-accent/90 font-normal">
-                                      {' '}
-                                      · Est. {formatMoneySimple(subtotal)}
-                                    </span>
-                                  ) : null
+                                  const hrsNorm = clampCoverageHoursDeducted(hrs)
+                                  return (
+                                    <>
+                                      {subtotal != null ? (
+                                        <span className="text-accent/90 font-normal">
+                                          {' '}
+                                          · Est. {formatMoneySimple(subtotal)}
+                                        </span>
+                                      ) : null}
+                                      {hrsNorm > 0 ? (
+                                        <span className="block text-[11px] text-sky-200/80 mt-0.5 font-normal">
+                                          Coverage −{hrsNorm} hr
+                                          {item.coverageHourDeductionRatePerHour?.trim()
+                                            ? ` @ ${item.coverageHourDeductionRatePerHour.trim()}`
+                                            : ''}
+                                        </span>
+                                      ) : null}
+                                    </>
+                                  )
                                 })()}
                               </span>
                             </span>

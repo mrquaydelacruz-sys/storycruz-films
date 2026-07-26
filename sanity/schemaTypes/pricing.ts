@@ -65,7 +65,7 @@ export default defineType({
             type: 'boolean',
             initialValue: false,
             description:
-              '0–2 hr stepper when selected; each hour reduces the tier estimate using the credit string below.',
+              '0–4 hr stepper when selected; each hour reduces the tier estimate using the credit string below.',
           },
           {
             name: 'coverageHourDeductionRatePerHour',
@@ -115,7 +115,7 @@ export default defineType({
             type: 'boolean',
             initialValue: false,
             description:
-              '0–2 hr stepper when selected; each hour reduces the tier estimate using the credit string below.',
+              '0–4 hr stepper when selected; each hour reduces the tier estimate using the credit string below.',
           },
           {
             name: 'coverageHourDeductionRatePerHour',

@@ -128,7 +128,34 @@ export function computePackageEstimate(
 }
 
 /** Max hours a client can deduct from a single package’s coverage in the builder. */
-export const PACKAGE_BUILDER_COVERAGE_HOUR_DEDUCTION_CAP = 2
+export const PACKAGE_BUILDER_COVERAGE_HOUR_DEDUCTION_CAP = 4
+
+/**
+ * Default hourly credit when a photo / cinema / photo+film tier does not set one in CMS.
+ * Matches the live Collection I rate shown on the package builder.
+ */
+export const DEFAULT_PACKAGE_BUILDER_COVERAGE_HOUR_RATE = '$150/hr + GST'
+
+/**
+ * Ensure every priced package tier can show the coverage-hour stepper.
+ * Preserves an existing CMS rate when present; otherwise uses the default.
+ * Skip add-on / enhancement rows (call only on photo, video, and photo+film catalogs).
+ */
+export function ensureCoverageHourDeductionOnPackages(
+  items: PackageCatalogItem[],
+  defaultRate: string = DEFAULT_PACKAGE_BUILDER_COVERAGE_HOUR_RATE
+): PackageCatalogItem[] {
+  return items.map((item) => {
+    const base = extractFirstDollarAmount(item.price ?? '')
+    if (base == null) return item
+    const existingRate = item.coverageHourDeductionRatePerHour?.trim()
+    return {
+      ...item,
+      coverageHourDeductionEnabled: true,
+      coverageHourDeductionRatePerHour: existingRate || defaultRate,
+    }
+  })
+}
 
 export function clampCoverageHoursDeducted(raw: number): number {
   if (!Number.isFinite(raw) || raw <= 0) return 0

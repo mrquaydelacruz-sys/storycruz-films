@@ -1,7 +1,7 @@
 /** Shared package-builder catalog row (Sanity-driven or fallback). */
 
 import type { AddonTotalsToward, PackageCatalogItem } from '@/lib/package-catalog-types'
-import { enrichCatalogItems } from '@/lib/package-catalog-math'
+import { enrichCatalogItems, ensureCoverageHourDeductionOnPackages } from '@/lib/package-catalog-math'
 import { packageFeaturesRawToIncludedLines } from '@/lib/pricing-features-normalize'
 import {
   seasonalCollectionsToCatalog,
@@ -532,26 +532,29 @@ export function resolvePackageBuilderPage({
   const comboRowsFromHiddenPricing =
     loadFromGuide && inheritHiddenPricingPhotoFilmBundles ? rawPhotoFilmBundles : []
 
-  let photoCatalog = enrichCatalogItems([...photoGuide, ...manualPhoto])
-  let videoCatalog = enrichCatalogItems([...videoGuide, ...manualVideo])
-  let photoFilmBundleOffers = enrichCatalogItems([
-    ...comboRowsFromHiddenPricing,
-    ...manualPhotoFilm,
-  ])
+  let photoCatalog = ensureCoverageHourDeductionOnPackages(
+    enrichCatalogItems([...photoGuide, ...manualPhoto])
+  )
+  let videoCatalog = ensureCoverageHourDeductionOnPackages(
+    enrichCatalogItems([...videoGuide, ...manualVideo])
+  )
+  let photoFilmBundleOffers = ensureCoverageHourDeductionOnPackages(
+    enrichCatalogItems([...comboRowsFromHiddenPricing, ...manualPhotoFilm])
+  )
   let addonCatalog = brief
     ? enrichCatalogItems(normalizeAddonOfferings(brief.addonOfferings))
     : []
 
   /** Hoist “A La Carte & Enhancements”-style pricing rows out of tier columns into the dropdown list. */
   const stripPhoto = stripHoistedEnhancementTiersFromCatalog(photoCatalog, 'photography')
-  photoCatalog = stripPhoto.catalog
+  photoCatalog = ensureCoverageHourDeductionOnPackages(stripPhoto.catalog)
   const stripVideo = stripHoistedEnhancementTiersFromCatalog(videoCatalog, 'cinematography')
-  videoCatalog = stripVideo.catalog
+  videoCatalog = ensureCoverageHourDeductionOnPackages(stripVideo.catalog)
   const stripPhotoFilmBundles = stripHoistedEnhancementTiersFromCatalog(
     photoFilmBundleOffers,
     'photography'
   )
-  photoFilmBundleOffers = stripPhotoFilmBundles.catalog
+  photoFilmBundleOffers = ensureCoverageHourDeductionOnPackages(stripPhotoFilmBundles.catalog)
   addonCatalog = enrichCatalogItems([
     ...addonCatalog,
     ...stripPhoto.hoistedAddons,
@@ -563,9 +566,13 @@ export function resolvePackageBuilderPage({
 
   if (!preserveEmptyOfferings) {
     if (photoCatalog.length === 0)
-      photoCatalog = enrichCatalogItems(FALLBACK_PHOTO_CATALOG.slice())
+      photoCatalog = ensureCoverageHourDeductionOnPackages(
+        enrichCatalogItems(FALLBACK_PHOTO_CATALOG.slice())
+      )
     if (videoCatalog.length === 0)
-      videoCatalog = enrichCatalogItems(FALLBACK_VIDEO_CATALOG.slice())
+      videoCatalog = ensureCoverageHourDeductionOnPackages(
+        enrichCatalogItems(FALLBACK_VIDEO_CATALOG.slice())
+      )
   }
 
   const addonSectionTitle = brief?.addonSectionTitle?.trim() || d.addonSectionTitle

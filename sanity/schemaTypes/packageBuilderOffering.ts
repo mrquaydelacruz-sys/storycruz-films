@@ -67,7 +67,7 @@ export default defineType({
       type: 'boolean',
       initialValue: false,
       description:
-        'Shows a 0–2 hrs deduction control on selected tiers; each hour trims the estimate by the credit below.',
+        'Shows a 0–4 hrs deduction control on selected tiers; each hour trims the estimate by the credit below.',
     }),
     defineField({
       name: 'coverageHourDeductionRatePerHour',
