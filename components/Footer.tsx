@@ -55,13 +55,13 @@ export default function Footer({ data, className = '' }: Props) {
           <div className="md:col-span-5">
             <Link href="/" className="inline-block">
               {data.logoUrl ? (
-                <div className="relative mb-6 h-10 w-36">
+                <div className="relative mb-6 h-20 w-20 md:h-24 md:w-24">
                   <Image
                     src={data.logoUrl}
                     alt="StoryCruz Films"
                     fill
                     className="object-contain object-left"
-                    sizes="144px"
+                    sizes="96px"
                   />
                 </div>
               ) : (

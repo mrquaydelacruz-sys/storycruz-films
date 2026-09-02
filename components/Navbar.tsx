@@ -51,15 +51,20 @@ export default function Navbar({ logoUrl }: { logoUrl?: string }) {
     >
       {/* 1. THE TOP BAR — dark + gold branding when menu open to match overlay */}
       <div className={`relative z-[10000] border-b h-20 px-6 md:px-12 flex items-center justify-between transition-colors duration-300 ${isOpen ? 'bg-[#0a0a0a] border-white/10' : 'bg-black/90 backdrop-blur-xl border-white/5'}`}>
-        {/* LOGO */}
-        <Link href="/" className="relative w-32 h-10 block" onClick={() => setIsOpen(false)}>
+        {/* LOGO — circular badge mark */}
+        <Link
+          href="/"
+          className="relative block h-14 w-14 shrink-0 md:h-16 md:w-16"
+          onClick={() => setIsOpen(false)}
+        >
           {logoUrl ? (
             <Image
               src={logoUrl}
-              alt="Logo"
+              alt="StoryCruz Films"
               fill
-              className="object-contain object-left transition-all duration-300"
+              className="object-contain transition-all duration-300"
               priority
+              sizes="64px"
             />
           ) : (
             <span className="text-2xl font-serif tracking-tighter text-white transition-colors duration-300">

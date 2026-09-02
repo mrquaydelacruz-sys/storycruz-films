@@ -13,8 +13,14 @@ export function WelcomePopup({ data }: { data: any }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Don't show popup on commercial flows (not wedding-related)
-    if (pathname === '/commercial' || pathname?.startsWith('/commercial/')) return;
+    // Don't show popup on commercial flows or QR connect landing
+    if (
+      pathname === '/commercial' ||
+      pathname?.startsWith('/commercial/') ||
+      pathname === '/connect' ||
+      pathname === '/qr'
+    )
+      return;
 
     const hasSeen = sessionStorage.getItem('hasSeenPopup');
 

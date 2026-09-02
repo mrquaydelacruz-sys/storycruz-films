@@ -1,4 +1,4 @@
-import { client, urlFor } from '@/sanity/client'
+import { client } from '@/sanity/client'
 
 export type SiteChromeData = {
   logoUrl?: string
@@ -8,6 +8,9 @@ export type SiteChromeData = {
   copyrightText: string
 }
 
+/** Primary brand mark in `/public` — used sitewide (nav, footer, connect landing, vision). */
+export const BRAND_LOGO_PATH = '/logo.png'
+
 const DEFAULT_EMAIL = 'hello@storycruzfilms.com'
 const DEFAULT_LOCATION = 'High River, Alberta'
 
@@ -16,16 +19,13 @@ export async function getSiteChromeData(): Promise<SiteChromeData> {
     email,
     location,
     socialLinks,
-    copyrightText,
-    navbarLogo
+    copyrightText
   }`)
 
   const year = new Date().getFullYear()
 
   return {
-    logoUrl: doc?.navbarLogo
-      ? urlFor(doc.navbarLogo).width(240).auto('format').url()
-      : undefined,
+    logoUrl: BRAND_LOGO_PATH,
     email: doc?.email?.trim() || DEFAULT_EMAIL,
     location: doc?.location?.trim() || DEFAULT_LOCATION,
     socialLinks: Array.isArray(doc?.socialLinks) ? doc.socialLinks : [],
@@ -38,4 +38,9 @@ export async function getSiteChromeData(): Promise<SiteChromeData> {
 /** Routes that render their own footer inside the vision experience. */
 export function routeUsesEmbeddedFooter(pathname: string): boolean {
   return pathname === '/' || pathname === '/vision'
+}
+
+/** QR / link landing — self-contained page without site chrome. */
+export function routeIsConnectLanding(pathname: string): boolean {
+  return pathname === '/connect' || pathname === '/qr'
 }

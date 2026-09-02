@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { routeUsesEmbeddedFooter, type SiteChromeData } from '@/lib/site-chrome'
+import { routeUsesEmbeddedFooter, routeIsConnectLanding, type SiteChromeData } from '@/lib/site-chrome'
 
 type Props = {
   children: React.ReactNode
@@ -13,9 +13,10 @@ type Props = {
 export default function SiteChrome({ children, chrome }: Props) {
   const pathname = usePathname() ?? ''
   const isStudio = pathname.startsWith('/studio')
+  const isConnectLanding = routeIsConnectLanding(pathname)
   const embedFooter = routeUsesEmbeddedFooter(pathname)
 
-  if (isStudio) {
+  if (isStudio || isConnectLanding) {
     return <>{children}</>
   }
 
