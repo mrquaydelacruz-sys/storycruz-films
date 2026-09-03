@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { AnimatePresence, motion } from 'framer-motion'
 
 type Props = {
   images: string[]
@@ -36,25 +35,23 @@ export default function AutoImageSlideshow({
     <div
       className={`relative overflow-hidden border border-white/20 bg-black ${aspectClassName} ${className}`}
     >
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={images[index]}
-          initial={{ opacity: 0, scale: 1.04 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 1.02 }}
-          transition={{ duration: 1.1, ease: 'easeInOut' }}
-          className="absolute inset-0"
+      {images.map((src, i) => (
+        <div
+          key={src}
+          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+            i === index ? 'opacity-100' : 'opacity-0'
+          }`}
         >
           <Image
-            src={images[index]}
+            src={src}
             alt={alt}
             fill
             sizes="(max-width: 768px) 90vw, 480px"
             className="object-cover"
-            priority={index === 0}
+            priority={i === 0}
           />
-        </motion.div>
-      </AnimatePresence>
+        </div>
+      ))}
 
       {images.length > 1 && (
         <div className="absolute bottom-3 left-0 right-0 z-10 flex justify-center gap-1.5">

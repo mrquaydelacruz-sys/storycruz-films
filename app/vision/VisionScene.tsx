@@ -1,9 +1,9 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Environment, useVideoTexture, ScrollControls, useScroll, useTexture, Float, Sparkles, Image as DreiImage, Html } from "@react-three/drei";
+import { Environment, useVideoTexture, ScrollControls, useScroll, useTexture, Sparkles, Image as DreiImage } from "@react-three/drei";
 import { createRoot } from "react-dom/client";
-import { Suspense, useRef, useState, useEffect, createContext, useContext } from "react";
+import { Suspense, useRef, useEffect, createContext, useContext } from "react";
 import * as THREE from 'three';
 import dynamic from "next/dynamic";
 import type { VisionData } from "@/app/vision/types";
@@ -12,7 +12,66 @@ import Footer from "@/components/Footer";
 
 const FeaturedFilms = dynamic(() => import("@/components/FeaturedFilms"));
 const ContactSection = dynamic(() => import("@/components/ContactSection"));
-import Image from "next/image";
+
+const PAGES = 6;
+/** How many viewport-heights the overlay travels from offset 0 → 1. */
+const SCROLL_TRAVEL = PAGES - 1;
+
+type Visuals = {
+    offset: number;
+    logo: number;
+    photos: number;
+    bg: number;
+    divider: number;
+};
+
+type VisualsRef = React.MutableRefObject<Visuals>;
+
+function clamp01(value: number) {
+    return Math.min(1, Math.max(0, value));
+}
+
+function smoothstep(t: number) {
+    const x = clamp01(t);
+    return x * x * (3 - 2 * x);
+}
+
+/**
+ * Opacity for a section parked at `topVh`, based on where that top sits in the
+ * viewport after scroll. Keeps enter/hold/exit aligned with real scroll position
+ * so we never blank the page between sections.
+ */
+function sectionOpacity(offset: number, topVh: number) {
+    const y = topVh - offset * SCROLL_TRAVEL * 100;
+    if (y >= 85) return 0;
+    if (y > 15) return smoothstep((85 - y) / 70);
+    if (y > -55) return 1;
+    if (y > -110) return 1 - smoothstep((-55 - y) / 55);
+    return 0;
+}
+
+/** Fade in, hold at 1, fade out — so sections can actually arrive before they leave. */
+function plateau(offset: number, inStart: number, holdStart: number, holdEnd: number, outEnd: number) {
+    if (offset <= inStart || offset >= outEnd) return 0;
+    if (offset < holdStart) return smoothstep((offset - inStart) / (holdStart - inStart));
+    if (offset > holdEnd) return 1 - smoothstep((offset - holdEnd) / (outEnd - holdEnd));
+    return 1;
+}
+
+function setMaterialOpacity(material: THREE.Material | THREE.Material[] | undefined, opacity: number) {
+    if (!material) return;
+    if (Array.isArray(material)) {
+        material.forEach((entry) => {
+            entry.opacity = opacity;
+            entry.transparent = true;
+        });
+        return;
+    }
+    material.opacity = opacity;
+    material.transparent = true;
+    const uniform = (material as THREE.ShaderMaterial).uniforms?.opacity;
+    if (uniform) uniform.value = opacity;
+}
 
 // Scroll state for the overlay (avoids using Scroll html, which can call createRoot twice).
 export type ScrollStateRef = React.MutableRefObject<{ offset: number; height: number; pages: number }>;
@@ -26,7 +85,7 @@ function ScrollStateWriter({ children }: { children: React.ReactNode }) {
         if (stateRef?.current) {
             stateRef.current.offset = scroll.offset;
             stateRef.current.height = size.height;
-            stateRef.current.pages = 6;
+            stateRef.current.pages = PAGES;
         }
     });
     return <>{children}</>;
@@ -36,85 +95,92 @@ export type { VisionData } from "@/app/vision/types";
 
 // --- COMPONENTS ---
 
-function BackgroundVideo({ url, opacity }: { url: string, opacity: number }) {
+function BackgroundVideo({ url, visuals }: { url: string; visuals: VisualsRef }) {
     const texture = useVideoTexture(url);
+    const materialRef = useRef<THREE.MeshBasicMaterial>(null);
     const { width, height } = useThree((state) => state.viewport.getCurrentViewport(state.camera, [0, 0, -2]));
 
-    // Calculate "cover" scale (like CSS background-size: cover)
     const videoAspect = 16 / 9;
     const viewportAspect = width / height;
 
     let scale: [number, number, number];
     if (viewportAspect > videoAspect) {
-        // Viewport is wider than video: constrain by width
         scale = [width, width / videoAspect, 1];
     } else {
-        // Viewport is taller than video: constrain by height
         scale = [height * videoAspect, height, 1];
     }
+
+    useFrame(() => {
+        if (materialRef.current) materialRef.current.opacity = visuals.current.bg;
+    });
 
     return (
         <mesh position={[0, 0, -2]} scale={scale}>
             <planeGeometry />
             <meshBasicMaterial
+                ref={materialRef}
                 map={texture}
                 transparent
-                opacity={opacity}
+                opacity={0.6}
                 toneMapped={false}
             />
         </mesh>
     );
 }
 
-function Divider3D({ url, opacity, scrollOffset }: { url: string, opacity: number, scrollOffset: number }) {
-    const meshRef = useRef<THREE.Group>(null);
+function Divider3D({ url, visuals }: { url: string; visuals: VisualsRef }) {
+    const groupRef = useRef<THREE.Group>(null);
+    const imageRef = useRef<THREE.Mesh>(null);
+
     useFrame(() => {
-        if (meshRef.current) {
-            // Parallax: Moves up 
-            // Active around offset 0.15 - 0.25 (See MainSequence)
-            // We want it to slide through the view.
-            // Center of view is Y=0.
-            // When Offset = 0.2 (center of divider phase), Y should be 0.
-            const relativeY = (scrollOffset - 0.2) * 10;
-            meshRef.current.position.y = relativeY;
+        const opacity = visuals.current.divider;
+        if (groupRef.current) {
+            groupRef.current.visible = opacity > 0.01;
+            groupRef.current.position.y = (visuals.current.offset - 0.27) * 8;
         }
+        if (imageRef.current) setMaterialOpacity(imageRef.current.material, opacity);
     });
 
     if (!url) return null;
 
     return (
-        <group ref={meshRef} visible={opacity > 0} position={[0, -5, -1]}>
+        <group ref={groupRef} visible={false} position={[0, -5, -1]}>
             <DreiImage
+                ref={imageRef}
                 url={url}
                 scale={[12, 6]}
                 transparent
-                opacity={opacity}
+                opacity={0}
                 color="#888"
             />
         </group>
     );
 }
 
-function LogoHero({ opacity, scrollOffset }: { opacity: number, scrollOffset: number }) {
+function LogoHero({ visuals }: { visuals: VisualsRef }) {
     const texture = useTexture("/logo.png");
+    const groupRef = useRef<THREE.Group>(null);
     const meshRef = useRef<THREE.Mesh>(null);
 
     useFrame((state) => {
+        const opacity = visuals.current.logo;
+        if (groupRef.current) groupRef.current.visible = opacity > 0.01;
         if (meshRef.current) {
-            const targetRotation = scrollOffset * Math.PI * 4;
+            const targetRotation = visuals.current.offset * Math.PI * 4;
             meshRef.current.rotation.y = THREE.MathUtils.lerp(meshRef.current.rotation.y, targetRotation, 0.1);
             meshRef.current.position.y = Math.sin(state.clock.elapsedTime) * 0.1;
+            setMaterialOpacity(meshRef.current.material, opacity);
         }
     });
 
     return (
-        <group visible={opacity > 0}>
+        <group ref={groupRef}>
             <mesh ref={meshRef}>
                 <planeGeometry args={[1.5, 1.5]} />
                 <meshStandardMaterial
                     map={texture}
                     transparent
-                    opacity={opacity}
+                    opacity={1}
                     roughness={0.1}
                     metalness={1}
                     envMapIntensity={2}
@@ -124,40 +190,63 @@ function LogoHero({ opacity, scrollOffset }: { opacity: number, scrollOffset: nu
     );
 }
 
-interface BorderedImageProps {
+function BorderedImage({
+    url,
+    position,
+    scale,
+    getOpacity,
+    dampFade = false,
+    radius = 0,
+}: {
     url: string;
     position: [number, number, number];
     scale: [number, number];
-    opacity: number;
+    getOpacity: () => number;
+    dampFade?: boolean;
     radius?: number;
-}
-
-function BorderedImage({ url, position, scale, opacity, radius = 0 }: BorderedImageProps) {
+}) {
+    const groupRef = useRef<THREE.Group>(null);
+    const borderMatRef = useRef<THREE.MeshBasicMaterial>(null);
+    const imageRef = useRef<THREE.Mesh>(null);
+    const fadeRef = useRef(0);
     const borderSize = 0.04;
+
+    useFrame((_, delta) => {
+        const target = getOpacity();
+        fadeRef.current = dampFade
+            ? THREE.MathUtils.damp(fadeRef.current, target, 4, delta)
+            : target;
+        const opacity = fadeRef.current;
+        if (groupRef.current) groupRef.current.visible = opacity > 0.01;
+        if (borderMatRef.current) borderMatRef.current.opacity = opacity;
+        if (imageRef.current) setMaterialOpacity(imageRef.current.material, opacity);
+    });
+
     return (
-        <group position={position}>
+        <group ref={groupRef} position={position} visible={false}>
             <mesh position={[0, 0, -0.01]}>
                 <planeGeometry args={[scale[0] + borderSize, scale[1] + borderSize]} />
-                <meshBasicMaterial color="white" transparent opacity={opacity} />
+                <meshBasicMaterial ref={borderMatRef} color="white" transparent opacity={0} />
             </mesh>
             <DreiImage
+                ref={imageRef}
                 url={url}
                 scale={scale}
                 transparent
-                opacity={opacity}
+                opacity={0}
                 radius={radius}
             />
         </group>
     );
 }
 
-function PhotoCarousel({ urls, opacity }: { urls: string[]; opacity: number }) {
-    const [activeIndex, setActiveIndex] = useState(0);
+function PhotoCarousel({ urls, visuals }: { urls: string[]; visuals: VisualsRef }) {
+    const activeIndex = useRef(0);
 
     useEffect(() => {
         if (urls.length <= 1) return;
         const timer = setInterval(() => {
-            setActiveIndex((prev) => (prev + 1) % urls.length);
+            activeIndex.current = (activeIndex.current + 1) % urls.length;
         }, 4000);
         return () => clearInterval(timer);
     }, [urls.length]);
@@ -165,51 +254,63 @@ function PhotoCarousel({ urls, opacity }: { urls: string[]; opacity: number }) {
     if (!urls || urls.length === 0) return null;
 
     return (
-        <group position={[3, 0, 0]}>
+        <group position={[0, 0, 0]}>
             {urls.map((url, i) => (
-                <group key={url} visible={i === activeIndex}>
-                    <BorderedImage
-                        url={url}
-                        scale={[0.85, 1.2]}
-                        position={[0, 0, 0]}
-                        opacity={opacity}
-                    />
-                </group>
+                <BorderedImage
+                    key={url}
+                    url={url}
+                    scale={[0.85, 1.2]}
+                    position={[0, 0, 0]}
+                    dampFade
+                    getOpacity={() => visuals.current.photos * (i === activeIndex.current ? 1 : 0)}
+                />
             ))}
         </group>
     );
 }
 
-function PhotoGrid({ opacity, data, scrollOffset }: { opacity: number, data: VisionData, scrollOffset: number }) {
+/** Rest positions keep the trio centered in the fov≈35 / z=6 framing. */
+const PHOTO_LEFT_X = -2.15;
+const PHOTO_RIGHT_X = 2.15;
+
+function PhotoGrid({ data, visuals }: { data: VisionData; visuals: VisualsRef }) {
+    const leftRef = useRef<THREE.Group>(null);
+    const rightRef = useRef<THREE.Group>(null);
+    const rootRef = useRef<THREE.Group>(null);
     const slideshow = (data.introSlideshowUrls && data.introSlideshowUrls.length > 0)
         ? data.introSlideshowUrls
         : [data.introCenterUrl];
 
+    useFrame(() => {
+        const photos = visuals.current.photos;
+        if (rootRef.current) rootRef.current.visible = photos > 0.01;
+        // Slide in from just outside rest — never park off the right edge.
+        if (leftRef.current) leftRef.current.position.x = PHOTO_LEFT_X - (1 - photos) * 0.9;
+        if (rightRef.current) rightRef.current.position.x = PHOTO_RIGHT_X + (1 - photos) * 0.9;
+    });
+
     return (
-        <group visible={opacity > 0} position={[0, -0.2, 0]}>
-            {/* Left Image */}
+        <group ref={rootRef} visible={false} position={[0, -0.15, 0]}>
             {data.introLeftUrl && (
-                <group position={[-3 + (scrollOffset * 4), 0, 0]}>
+                <group ref={leftRef} position={[PHOTO_LEFT_X, 0, 0]}>
                     <BorderedImage
                         url={data.introLeftUrl}
                         scale={[0.85, 1.2]}
-                        position={[-1.5, 0, 0]}
-                        opacity={opacity}
+                        position={[0, 0, 0]}
+                        getOpacity={() => visuals.current.photos}
                     />
                 </group>
             )}
 
-            {/* Slideshow */}
-            <PhotoCarousel urls={slideshow} opacity={opacity} />
+            <PhotoCarousel urls={slideshow} visuals={visuals} />
 
-            {/* Right Image */}
             {data.introRightUrl && (
-                <group position={[3 - (scrollOffset * 4), 0, 0]}>
+                <group ref={rightRef} position={[PHOTO_RIGHT_X, 0, 0]}>
                     <BorderedImage
                         url={data.introRightUrl}
-                        scale={[1.5, 1.0]}
-                        position={[1.5 + (slideshow.length * 0.1), 0, 0]}
-                        opacity={opacity}
+                        scale={[1.35, 0.9]}
+                        position={[0, 0, 0]}
+                        getOpacity={() => visuals.current.photos}
                     />
                 </group>
             )}
@@ -217,74 +318,58 @@ function PhotoGrid({ opacity, data, scrollOffset }: { opacity: number, data: Vis
     );
 }
 
-// --- 3D SCENE COMPOSITOR ---
 function MainSequence({ data }: { data: VisionData }) {
     const scroll = useScroll();
-    const [scrollState, setScrollState] = useState({ offset: 0 });
-    const [opacities, setOpacities] = useState({
+    const visuals = useRef<Visuals>({
+        offset: 0,
         logo: 1,
         photos: 0,
         bg: 0.6,
-        divider: 0
+        divider: 0,
     });
 
     useFrame(() => {
         const off = scroll.offset;
-        setScrollState({ offset: off });
-
-        // Total Pages: 5 (0.2 per page unit approximately)
-
-        // 1. Logo (0 - 0.05)
-        const logoOp = 1 - scroll.range(0, 0.05);
-
-        // 2. Photos (0.05 - 0.15)
-        const photoOp = scroll.curve(0.05, 0.15);
-
-        // 3. Divider (0.15 - 0.25)
-        let divOp = 0;
-        if (off > 0.15 && off < 0.25) {
-            // simple bell curve
-            divOp = Math.sin(((off - 0.15) / 0.1) * Math.PI);
+        visuals.current.offset = off;
+        visuals.current.logo = 1 - smoothstep(off / 0.09);
+        visuals.current.photos = plateau(off, 0.05, 0.11, 0.20, 0.28);
+        visuals.current.divider = plateau(off, 0.20, 0.24, 0.30, 0.36);
+        // Keep a soft video presence under mid sections; only clear once contact covers the view.
+        if (off <= 0.05) {
+            visuals.current.bg = 0.6;
+        } else if (off < 0.58) {
+            visuals.current.bg = THREE.MathUtils.lerp(0.6, 0.18, Math.min((off - 0.05) * 5, 1));
+        } else {
+            visuals.current.bg = 0.18 * (1 - smoothstep((off - 0.58) / 0.1));
         }
-
-        // 4. Background Video Global
-        // Start clear (0.6), dim down to 0.15 when leaving top area to let content pop
-        let bgOp = 0.6;
-        if (off > 0.05) {
-            // Lerp down to 0.15 quickly as we leave the hero
-            const fade = Math.min((off - 0.05) * 8, 1);
-            bgOp = THREE.MathUtils.lerp(0.6, 0.15, fade);
-        }
-
-        setOpacities({
-            logo: logoOp,
-            photos: photoOp,
-            bg: bgOp,
-            divider: divOp
-        });
     });
 
     return (
         <>
-            <BackgroundVideo url={data.heroVideoUrl || "/hero-video.mp4"} opacity={opacities.bg} />
-            <LogoHero opacity={opacities.logo} scrollOffset={scrollState.offset} />
-            <PhotoGrid opacity={opacities.photos} data={data} scrollOffset={scrollState.offset} />
+            <BackgroundVideo url={data.heroVideoUrl || "/hero-video.mp4"} visuals={visuals} />
+            <LogoHero visuals={visuals} />
+            <PhotoGrid data={data} visuals={visuals} />
             {data.dividerImageUrl && (
-                <Divider3D url={data.dividerImageUrl} opacity={opacities.divider} scrollOffset={scrollState.offset} />
+                <Divider3D url={data.dividerImageUrl} visuals={visuals} />
             )}
             <Sparkles count={40} scale={12} size={3} opacity={0.5} speed={0.35} color="#ffe4a1" />
         </>
     );
 }
 
-// Lerp progress in [start, end] to 0–1
-function progressIn(offset: number, start: number, end: number): number {
-    if (offset <= start) return 0;
-    if (offset >= end) return 1;
-    return (offset - start) / (end - start);
+function applySectionMotion(
+    el: HTMLElement | null,
+    opacity: number,
+    translateY: number,
+    interactive: boolean,
+) {
+    if (!el) return;
+    const visible = opacity > 0.02;
+    el.style.opacity = String(clamp01(opacity));
+    el.style.transform = `translate3d(0, ${translateY}px, 0)`;
+    el.style.pointerEvents = interactive && visible ? 'auto' : 'none';
 }
 
-// --- HTML SCROLL CONTENT (rendered into ScrollControls’ fixed div via a single root to avoid createRoot twice) ---
 function VisionOverlayContent({
     data,
     chrome,
@@ -294,41 +379,45 @@ function VisionOverlayContent({
     chrome: SiteChromeData;
     scrollStateRef: ScrollStateRef;
 }) {
-    const [offset, setOffset] = useState(0);
-    const [height, setHeight] = useState(600);
-    const lastSet = useRef(0);
-    const THROTTLE_MS = 40;
+    const rootRef = useRef<HTMLDivElement>(null);
+    const introRef = useRef<HTMLDivElement>(null);
+    const featuredRef = useRef<HTMLDivElement>(null);
+    const loveNotesRef = useRef<HTMLDivElement>(null);
+    const contactRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        let rafId: number;
+        let rafId = 0;
         const tick = () => {
             rafId = requestAnimationFrame(tick);
-            const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
-            if (now - lastSet.current >= THROTTLE_MS) {
-                lastSet.current = now;
-                setOffset(scrollStateRef.current.offset);
-                setHeight(scrollStateRef.current.height);
+            const offset = scrollStateRef.current.offset;
+            const height = scrollStateRef.current.height || 600;
+            const root = rootRef.current;
+            if (root) {
+                root.style.transform = `translate3d(0, ${height * SCROLL_TRAVEL * -offset}px, 0)`;
             }
+
+            const intro = sectionOpacity(offset, 0);
+            const featured = sectionOpacity(offset, 150);
+            const loveNotes = sectionOpacity(offset, 250);
+
+            const featuredY = featured < 1 && offset * SCROLL_TRAVEL * 100 < 150
+                ? (1 - featured) * 28
+                : (1 - featured) * -36;
+            const loveNotesY = loveNotes < 1 && offset * SCROLL_TRAVEL * 100 < 250
+                ? (1 - loveNotes) * 28
+                : (1 - loveNotes) * -36;
+
+            applySectionMotion(introRef.current, intro, (1 - intro) * -16, false);
+            applySectionMotion(featuredRef.current, featured, featuredY, true);
+            applySectionMotion(loveNotesRef.current, loveNotes, loveNotesY, false);
         };
         rafId = requestAnimationFrame(tick);
         return () => cancelAnimationFrame(rafId);
     }, [scrollStateRef]);
 
-    const pages = 6;
-    const featuredEnter = progressIn(offset, 0.30, 0.38);
-    const featuredExit = progressIn(offset, 0.42, 0.52);
-    const loveNotesEnter = progressIn(offset, 0.50, 0.62);
-
-    const featuredScale = 0.85 + 0.15 * (1 - featuredExit) * featuredEnter;
-    const featuredY = (1 - featuredEnter) * 32 + featuredExit * -120;
-    const featuredOpacity = Math.min(featuredEnter * (1 - featuredExit * 1.2), 1);
-    const loveNotesY = (1 - loveNotesEnter) * 48;
-    const loveNotesOpacity = loveNotesEnter;
-
-    const translateY = height * (pages - 1) * -offset;
-
     return (
         <div
+            ref={rootRef}
             className="w-full text-white font-serif relative"
             style={{
                 position: 'absolute',
@@ -336,7 +425,6 @@ function VisionOverlayContent({
                 left: 0,
                 width: '100%',
                 willChange: 'transform',
-                transform: `translate3d(0, ${translateY}px, 0)`,
             }}
         >
             <style>{`
@@ -346,71 +434,71 @@ function VisionOverlayContent({
                 ::-webkit-scrollbar-thumb:hover { background: #555; }
             `}</style>
 
-            {/* 0. Intro Text */}
-                <div className="absolute top-0 w-full h-[100vh] flex flex-col justify-end items-center pb-32 pointer-events-none">
-                    <h2 className="text-4xl md:text-5xl font-normal mb-2 text-center drop-shadow-2xl">
-                        Capturing the Unscripted
-                    </h2>
-                    <p className="text-sm tracking-widest uppercase opacity-70">
-                        Cinematic Details That Make Your Story Truly Yours
+            <div
+                ref={introRef}
+                className="absolute top-0 w-full h-[100vh] flex flex-col justify-end items-center pb-32 pointer-events-none will-change-transform"
+            >
+                <h2 className="text-4xl md:text-5xl font-normal mb-2 text-center drop-shadow-2xl">
+                    Capturing the Unscripted
+                </h2>
+                <p className="text-sm tracking-widest uppercase opacity-70">
+                    Cinematic Details That Make Your Story Truly Yours
+                </p>
+            </div>
+
+            <div
+                ref={featuredRef}
+                className="absolute top-[150vh] w-full min-h-[100vh] flex flex-col justify-center items-center will-change-transform"
+                style={{ opacity: 0, pointerEvents: 'none' }}
+            >
+                <div className="w-full max-w-7xl px-4">
+                    <FeaturedFilms
+                        films={data.featuredVideos.map(v => ({ ...v, youtubeUrl: v.videoUrl }))}
+                        forceVisible
+                    />
+                </div>
+            </div>
+
+            <div
+                ref={loveNotesRef}
+                className="absolute top-[250vh] w-full min-h-[100vh] flex flex-col justify-center items-center px-4 pointer-events-none will-change-transform"
+                style={{ opacity: 0 }}
+            >
+                <div className="max-w-4xl text-center">
+                    <div className="text-white/90 text-2xl tracking-[0.4em] mb-3" aria-hidden>
+                        ☆ ☆ ☆ ☆ ☆
+                    </div>
+                    <h3 className="text-3xl md:text-5xl font-serif text-white mb-2">
+                        Kind Words From Our Couples
+                    </h3>
+                    <p className="text-sm tracking-widest uppercase text-neutral-400 mb-12">
+                        Love Letters That Inspire Us
                     </p>
-                </div>
-
-                {/* 1. Featured Films — scroll-driven enter (pop) and exit (move away from center) */}
-                <div
-                    className="absolute top-[150vh] w-full min-h-[100vh] flex flex-col justify-center items-center will-change-transform"
-                    style={{
-                        transform: `translateY(${featuredY}px) scale(${featuredScale})`,
-                        opacity: featuredOpacity,
-                        transformOrigin: 'center center',
-                        pointerEvents: featuredOpacity < 0.02 ? 'none' : 'auto',
-                    }}
-                >
-                    <div className="w-full max-w-7xl px-4">
-                        <FeaturedFilms
-                            films={data.featuredVideos.map(v => ({ ...v, youtubeUrl: v.videoUrl }))}
-                            scrollDrivenProgress={featuredEnter}
-                        />
+                    <div className="flex flex-col gap-12">
+                        {data.testimonials?.slice(0, 3).map((t, i) => (
+                            <div key={i} className="rounded-lg border border-white/10 bg-black/75 p-8 shadow-xl backdrop-blur-md">
+                                <p className="text-xl italic mb-6">&ldquo;{t.quote}&rdquo;</p>
+                                <p className="text-sm uppercase font-bold text-neutral-400">— {t.couple}</p>
+                                {t.location && <p className="text-xs text-neutral-600 mt-2">{t.location}</p>}
+                            </div>
+                        ))}
                     </div>
                 </div>
+            </div>
 
-                {/* 2. Kind Words / Love Letters — appear as Featured Films moves away */}
-                <div
-                    className="absolute top-[250vh] w-full min-h-[100vh] flex flex-col justify-center items-center px-4 pointer-events-none will-change-transform"
-                    style={{
-                        transform: `translateY(${loveNotesY}px)`,
-                        opacity: loveNotesOpacity,
-                    }}
-                >
-                    <div className="max-w-4xl text-center">
-                        <div className="text-white/90 text-2xl tracking-[0.4em] mb-3" aria-hidden>
-                            ☆ ☆ ☆ ☆ ☆
-                        </div>
-                        <h3 className="text-3xl md:text-5xl font-serif text-white mb-2">
-                            Kind Words From Our Couples
-                        </h3>
-                        <p className="text-sm tracking-widest uppercase text-neutral-400 mb-12">
-                            Love Letters That Inspire Us
-                        </p>
-                        <div className="flex flex-col gap-12">
-                            {data.testimonials?.slice(0, 3).map((t, i) => (
-                                <div key={i} className="bg-black/40 backdrop-blur-md p-8 border border-white/10 rounded-lg shadow-xl">
-                                    <p className="text-xl italic mb-6">"{t.quote}"</p>
-                                    <p className="text-sm uppercase font-bold text-neutral-400">— {t.couple}</p>
-                                    {t.location && <p className="text-xs text-neutral-600 mt-2">{t.location}</p>}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+            {/*
+              Travel = 500vh. Contact from 320vh with min-height 180vh fills through
+              the end so the footer is the last thing on screen — no black void after.
+            */}
+            <div
+                ref={contactRef}
+                className="absolute top-[320vh] flex w-full min-h-[180vh] flex-col bg-[#050505]"
+            >
+                <div className="flex min-h-[100vh] flex-1 flex-col justify-center">
+                    <ContactSection />
                 </div>
-
-                {/* 3. Contact (Start at ~350vh) */}
-                <div className="absolute top-[350vh] w-full flex flex-col">
-                    <div className="flex min-h-[100vh] flex-col justify-center">
-                        <ContactSection />
-                    </div>
-                    <Footer data={chrome} />
-                </div>
+                <Footer data={chrome} className="mt-auto shrink-0" />
+            </div>
         </div>
     );
 }
@@ -438,7 +526,7 @@ function NavbarLogic() {
 // --- SCENE COMPONENT ---
 function Scene({ data }: { data: VisionData }) {
     return (
-        <ScrollControls pages={6} damping={0.3}>
+        <ScrollControls pages={PAGES} damping={0.18}>
             <ScrollStateWriter>
                 <Suspense fallback={null}>
                     <MainSequence data={data} />
@@ -452,7 +540,7 @@ function Scene({ data }: { data: VisionData }) {
 
 export default function VisionScene({ data, chrome }: { data: VisionData; chrome: SiteChromeData }) {
     const wrapperRef = useRef<HTMLDivElement>(null);
-    const scrollStateRef = useRef({ offset: 0, height: 600, pages: 6 });
+    const scrollStateRef = useRef({ offset: 0, height: 600, pages: PAGES });
     const overlayRootRef = useRef<ReturnType<typeof createRoot> | null>(null);
 
     useEffect(() => {
