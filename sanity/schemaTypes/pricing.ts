@@ -9,6 +9,7 @@ export default defineType({
       name: 'title',
       title: 'Page Title',
       type: 'string',
+      description: 'Main headline on the investment page and synced package builders.',
       initialValue: 'Investment Guide 2025'
     }),
 
@@ -19,6 +20,42 @@ export default defineType({
       description: 'This defines the secret link. e.g. "weddings" becomes .../investment/weddings',
       options: { source: 'title' },
       validation: Rule => Rule.required()
+    }),
+
+    defineField({
+      name: 'heroEyebrow',
+      title: 'Hero eyebrow',
+      type: 'string',
+      description:
+        'Small uppercase line above the headline (e.g. “Official Investment Guide” or “Local Business Rate Card”). Leave blank for the site default.',
+      initialValue: 'Official Investment Guide',
+    }),
+
+    defineField({
+      name: 'heroTagline',
+      title: 'Hero tagline',
+      type: 'text',
+      rows: 3,
+      description:
+        'Supporting sentence under the headline. Customize per guide (weddings vs local business vs a one-off client card). Leave blank for the site default.',
+      initialValue:
+        "We don't just capture events; we craft heirlooms. Below you will find the collections we have curated for your story.",
+    }),
+
+    defineField({
+      name: 'videoSectionTitle',
+      title: 'Video column heading',
+      type: 'string',
+      description: 'Heading above video packages (e.g. “Cinematography” or “Video”).',
+      initialValue: 'Cinematography',
+    }),
+
+    defineField({
+      name: 'photoSectionTitle',
+      title: 'Photo column heading',
+      type: 'string',
+      description: 'Heading above photography packages (e.g. “Photography” or “Stills”).',
+      initialValue: 'Photography',
     }),
     
     defineField({

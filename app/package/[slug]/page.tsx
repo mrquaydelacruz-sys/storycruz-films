@@ -19,14 +19,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!doc)
     return { title: 'Your package', robots: { index: false, follow: false } }
 
-  let title = `${doc.pageTitle ?? ''}`.trim() || 'Your package'
+  let title = `${doc.pageTitle ?? ''}`.trim()
+  if (title === 'Build your package') title = ''
+  if (!title) title = 'Your package'
 
-  if (doc.useInvestmentGuide !== false) {
-    const pslug =
-      `${doc.investmentPricingSlug ?? ''}`.trim() || DEFAULT_INVESTMENT_GUIDE_SLUG
-    const pricing = await fetchInvestmentPricingForPackage(pslug)
-    const fromGuide = `${pricing?.title ?? ''}`.trim()
-    if (fromGuide) title = fromGuide
+  if (!`${doc.pageTitle ?? ''}`.trim() || `${doc.pageTitle ?? ''}`.trim() === 'Build your package') {
+    if (doc.useInvestmentGuide !== false) {
+      const pslug =
+        `${doc.investmentPricingSlug ?? ''}`.trim() || DEFAULT_INVESTMENT_GUIDE_SLUG
+      const pricing = await fetchInvestmentPricingForPackage(pslug)
+      const fromGuide = `${pricing?.title ?? ''}`.trim()
+      if (fromGuide) title = fromGuide
+    }
   }
 
   return {

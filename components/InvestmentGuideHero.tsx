@@ -3,16 +3,30 @@ import BackgroundVideo from '@/components/BackgroundVideo'
 import {
   INVESTMENT_GUIDE_EYEBROW,
   INVESTMENT_GUIDE_TAGLINE,
+  resolveGuideCopy,
 } from '@/lib/investment-guide-copy'
 
 type Props = {
   title: string
+  /** Small uppercase line above the headline — from Hidden Pricing or brief override. */
+  eyebrow?: string | null
+  /** Supporting sentence under the headline. */
+  tagline?: string | null
   /** MP4 URL from Hidden Pricing hero video, or fallback. */
   videoSrc: string
   poster?: string
 }
 
-export default function InvestmentGuideHero({ title, videoSrc, poster }: Props) {
+export default function InvestmentGuideHero({
+  title,
+  eyebrow,
+  tagline,
+  videoSrc,
+  poster,
+}: Props) {
+  const eyebrowText = resolveGuideCopy(eyebrow, INVESTMENT_GUIDE_EYEBROW)
+  const taglineText = resolveGuideCopy(tagline, INVESTMENT_GUIDE_TAGLINE)
+
   return (
     <section className="relative flex h-[85vh] w-full items-center justify-center overflow-hidden">
       <BackgroundVideo
@@ -31,13 +45,13 @@ export default function InvestmentGuideHero({ title, videoSrc, poster }: Props) 
           ))}
         </div>
         <p className="mb-8 text-xs font-bold uppercase tracking-[0.4em] text-white/60 md:text-sm">
-          {INVESTMENT_GUIDE_EYEBROW}
+          {eyebrowText}
         </p>
         <h1 className="mb-8 font-serif text-5xl leading-tight text-white md:text-7xl lg:text-8xl">
           {title.trim() || 'Your Legacy.'}
         </h1>
         <p className="mx-auto max-w-2xl text-lg font-light leading-relaxed text-white/80 md:text-xl">
-          {INVESTMENT_GUIDE_TAGLINE}
+          {taglineText}
         </p>
       </div>
     </section>

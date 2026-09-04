@@ -3,6 +3,11 @@ import { Check, Clock, Users, Camera, Video } from "lucide-react";
 import FAQSection from "@/components/FAQSection";
 import InvestmentGuideHero from "@/components/InvestmentGuideHero";
 import { getPricingFeatureLabel } from "@/lib/pricing-features-normalize";
+import {
+  INVESTMENT_GUIDE_PHOTO_SECTION,
+  INVESTMENT_GUIDE_VIDEO_SECTION,
+  resolveGuideCopy,
+} from "@/lib/investment-guide-copy";
 
 export const revalidate = 60;
 
@@ -37,12 +42,23 @@ export default async function InvestmentPage({ params }: { params: { slug: strin
     </div>
   );
 
+  const videoSectionTitle = resolveGuideCopy(
+    data.videoSectionTitle,
+    INVESTMENT_GUIDE_VIDEO_SECTION
+  );
+  const photoSectionTitle = resolveGuideCopy(
+    data.photoSectionTitle,
+    INVESTMENT_GUIDE_PHOTO_SECTION
+  );
+
   return (
     <main className="min-h-screen bg-[#050505] text-white selection:bg-white/20">
       
       {/* HERO SECTION — matches package builder Private Link hero */}
       <InvestmentGuideHero
         title={data.title || 'Your Legacy.'}
+        eyebrow={data.heroEyebrow}
+        tagline={data.heroTagline}
         videoSrc={videoSource}
       />
 
@@ -54,7 +70,7 @@ export default async function InvestmentPage({ params }: { params: { slug: strin
           {data.videoPackages && data.videoPackages.length > 0 && (
             <div className="space-y-8">
               <h2 className="text-3xl font-serif text-center mb-8 flex items-center justify-center gap-4">
-                <span className="h-[1px] w-12 bg-white/20"></span>Cinematography<span className="h-[1px] w-12 bg-white/20"></span>
+                <span className="h-[1px] w-12 bg-white/20"></span>{videoSectionTitle}<span className="h-[1px] w-12 bg-white/20"></span>
               </h2>
               {data.videoPackages.map((pkg: any, i: number) => (
                 <div key={i} className="group relative bg-white/5 backdrop-blur-md p-10 rounded-sm border border-white/5 hover:border-white/20 hover:bg-white/10 transition-all duration-500">
@@ -88,7 +104,7 @@ export default async function InvestmentPage({ params }: { params: { slug: strin
           {data.photoPackages && data.photoPackages.length > 0 && (
             <div className="space-y-8">
               <h2 className="text-3xl font-serif text-center mb-8 flex items-center justify-center gap-4">
-                <span className="h-[1px] w-12 bg-white/20"></span>Photography<span className="h-[1px] w-12 bg-white/20"></span>
+                <span className="h-[1px] w-12 bg-white/20"></span>{photoSectionTitle}<span className="h-[1px] w-12 bg-white/20"></span>
               </h2>
               {data.photoPackages.map((pkg: any, i: number) => (
                 <div key={i} className="group relative bg-white/5 backdrop-blur-md p-10 rounded-sm border border-white/5 hover:border-white/20 hover:bg-white/10 transition-all duration-500">

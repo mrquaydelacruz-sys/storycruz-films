@@ -1730,6 +1730,8 @@ export default function TestingPackageBuilder({
       {useInvestmentStyleHero ? (
         <InvestmentGuideHero
           title={title}
+          eyebrow={eyebrow}
+          tagline={intro}
           videoSrc={heroVideoSrc ?? DEFAULT_PACKAGE_HERO_MP4}
         />
       ) : (

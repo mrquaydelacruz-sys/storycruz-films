@@ -14,6 +14,7 @@ import { stripHoistedEnhancementTiersFromCatalog } from '@/lib/pricing-hoist-enh
 import {
   INVESTMENT_GUIDE_EYEBROW,
   INVESTMENT_GUIDE_TAGLINE,
+  resolveGuideCopy,
 } from '@/lib/investment-guide-copy'
 
 export type { PackageCatalogItem } from '@/lib/package-catalog-types'
@@ -24,6 +25,14 @@ export { DEFAULT_INVESTMENT_GUIDE_SLUG } from '@/lib/pricing-to-package-catalog'
 export type PricingForPackageGroq = {
   /** Hidden Pricing Page document title — same headline as /investment/[slug]. */
   title?: string | null
+  /** Small uppercase line above the headline. */
+  heroEyebrow?: string | null
+  /** Supporting sentence under the headline. */
+  heroTagline?: string | null
+  /** Heading above video packages on /investment and in the builder. */
+  videoSectionTitle?: string | null
+  /** Heading above photography packages on /investment and in the builder. */
+  photoSectionTitle?: string | null
   /** Resolved hero MP4 URL (empty if no asset uploaded). */
   heroVideoUrl?: string | null
   videoPackages?: unknown
@@ -610,31 +619,43 @@ export function resolvePackageBuilderPage({
   let videoColumnTitle: string
   let videoColumnSubtitle: string
 
+  const briefEyebrow = brief?.pageEyebrow?.trim() || ''
+  /** Older briefs stored this initialValue even while the field was hidden under guide sync. */
+  const briefTitleRaw = brief?.pageTitle?.trim() || ''
+  const briefTitle =
+    useInvestmentStyleHero && briefTitleRaw === 'Build your package'
+      ? ''
+      : briefTitleRaw
+  const briefIntro = brief?.pageIntro?.trim() || ''
+  const briefPhotoTitle = brief?.photoColumnTitle?.trim() || ''
+  const briefPhotoSubtitle = brief?.photoColumnSubtitle?.trim() || ''
+  const briefVideoTitle = brief?.videoColumnTitle?.trim() || ''
+  const briefVideoSubtitle = brief?.videoColumnSubtitle?.trim() || ''
+
   if (useInvestmentStyleHero && pricing != null) {
-    eyebrow = INVESTMENT_GUIDE_EYEBROW
-    title = `${pricing.title ?? ''}`.trim() || 'Your Legacy.'
-    intro = INVESTMENT_GUIDE_TAGLINE
+    // Brief override → Hidden Pricing wording → site defaults
+    eyebrow = briefEyebrow || resolveGuideCopy(pricing.heroEyebrow, INVESTMENT_GUIDE_EYEBROW)
+    title =
+      briefTitle ||
+      `${pricing.title ?? ''}`.trim() ||
+      'Your Legacy.'
+    intro = briefIntro || resolveGuideCopy(pricing.heroTagline, INVESTMENT_GUIDE_TAGLINE)
     photoColumnTitle =
-      brief?.photoColumnTitle?.trim() ||
-      PACKAGE_BUILDER_DEFAULTS.photoColumnTitle
-    photoColumnSubtitle =
-      brief?.photoColumnSubtitle?.trim() ||
-      PACKAGE_BUILDER_DEFAULTS.photoColumnSubtitle
+      briefPhotoTitle ||
+      resolveGuideCopy(pricing.photoSectionTitle, PACKAGE_BUILDER_DEFAULTS.photoColumnTitle)
+    photoColumnSubtitle = briefPhotoSubtitle || PACKAGE_BUILDER_DEFAULTS.photoColumnSubtitle
     videoColumnTitle =
-      brief?.videoColumnTitle?.trim() || PACKAGE_BUILDER_DEFAULTS.videoColumnTitle
-    videoColumnSubtitle =
-      brief?.videoColumnSubtitle?.trim() ||
-      PACKAGE_BUILDER_DEFAULTS.videoColumnSubtitle
+      briefVideoTitle ||
+      resolveGuideCopy(pricing.videoSectionTitle, PACKAGE_BUILDER_DEFAULTS.videoColumnTitle)
+    videoColumnSubtitle = briefVideoSubtitle || PACKAGE_BUILDER_DEFAULTS.videoColumnSubtitle
   } else if (hasDoc) {
-    eyebrow = brief.pageEyebrow?.trim() ? brief.pageEyebrow.trim() : null
-    title = brief.pageTitle?.trim() || d.title
-    intro = brief.pageIntro?.trim() || d.intro
-    photoColumnTitle = brief.photoColumnTitle?.trim() || d.photoColumnTitle
-    photoColumnSubtitle =
-      brief.photoColumnSubtitle?.trim() || d.photoColumnSubtitle
-    videoColumnTitle = brief.videoColumnTitle?.trim() || d.videoColumnTitle
-    videoColumnSubtitle =
-      brief.videoColumnSubtitle?.trim() || d.videoColumnSubtitle
+    eyebrow = briefEyebrow || null
+    title = briefTitleRaw || d.title
+    intro = briefIntro || d.intro
+    photoColumnTitle = briefPhotoTitle || d.photoColumnTitle
+    photoColumnSubtitle = briefPhotoSubtitle || d.photoColumnSubtitle
+    videoColumnTitle = briefVideoTitle || d.videoColumnTitle
+    videoColumnSubtitle = briefVideoSubtitle || d.videoColumnSubtitle
   } else {
     eyebrow = `${d.eyebrow ?? ''}`.trim() || null
     title = d.title

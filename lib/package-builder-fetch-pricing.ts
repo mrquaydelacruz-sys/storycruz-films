@@ -5,6 +5,10 @@ import { DEFAULT_INVESTMENT_GUIDE_SLUG } from '@/lib/pricing-to-package-catalog'
 const QUERY = `
 *[_type == "pricing" && slug.current == $slug][0]{
   title,
+  heroEyebrow,
+  heroTagline,
+  videoSectionTitle,
+  photoSectionTitle,
   "heroVideoUrl": heroVideo.asset->url,
   videoPackages[]{ name, price, description, coverageHourDeductionEnabled, coverageHourDeductionRatePerHour, features, optionalAddOns[]{ key, title, description, price, addonTotalsToward } },
   photoPackages[]{ name, price, description, coverageHourDeductionEnabled, coverageHourDeductionRatePerHour, features, optionalAddOns[]{ key, title, description, price, addonTotalsToward } },

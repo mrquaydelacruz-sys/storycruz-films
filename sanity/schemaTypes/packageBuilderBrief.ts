@@ -63,41 +63,38 @@ export default defineType({
 
     defineField({
       name: 'pageEyebrow',
-      title: 'Eyebrow label',
+      title: 'Eyebrow label (optional override)',
       type: 'string',
       description:
-        'Only used when Investment Guide sync is OFF. Otherwise the hero matches your Hidden Pricing Page.',
-      hidden: ({ document }) => document?.useInvestmentGuide !== false,
+        'Overrides the linked Hidden Pricing Page eyebrow when filled. Leave blank to inherit from that guide (or the site default).',
     }),
     defineField({
       name: 'pageTitle',
-      title: 'Main headline',
+      title: 'Main headline (optional override)',
       type: 'string',
-      initialValue: 'Build your package',
       description:
-        'Only used when Investment Guide sync is OFF. When sync is ON, the title comes from the Hidden Pricing document.',
-      hidden: ({ document }) => document?.useInvestmentGuide !== false,
+        'Overrides the linked Hidden Pricing Page title when filled. Leave blank to inherit. When sync is OFF, blank falls back to “Build your package”.',
     }),
     defineField({
       name: 'pageIntro',
-      title: 'Intro paragraph',
+      title: 'Intro paragraph (optional override)',
       type: 'text',
       rows: 4,
       description:
-        'Only used when Investment Guide sync is OFF. When sync is ON, clients see the same intro as /investment.',
-      hidden: ({ document }) => document?.useInvestmentGuide !== false,
+        'Overrides the linked Hidden Pricing Page tagline when filled. Leave blank to inherit from that guide (or the site default).',
     }),
     defineField({
       name: 'photoColumnTitle',
       title: 'Photo column title',
       type: 'string',
-      initialValue: 'Photography',
+      description:
+        'Leave blank to inherit from the linked Hidden Pricing Page (“Photo column heading”), then “Photography”.',
     }),
     defineField({
       name: 'photoColumnSubtitle',
       title: 'Photo column subtitle',
       type: 'string',
-      initialValue: 'Tap to add or remove',
+      description: 'Muted line under the photo column heading. Leave blank for the site default.',
     }),
     defineField({
       name: 'photoOfferings',
@@ -111,14 +108,14 @@ export default defineType({
       name: 'videoColumnTitle',
       title: 'Video column title',
       type: 'string',
-      description: 'Defaults to Cinematography to match your Investment Guide. Override here if needed.',
-      initialValue: 'Cinematography',
+      description:
+        'Leave blank to inherit from the linked Hidden Pricing Page (“Video column heading”), then “Cinematography”.',
     }),
     defineField({
       name: 'videoColumnSubtitle',
       title: 'Video column subtitle',
       type: 'string',
-      initialValue: 'Tap to add or remove',
+      description: 'Muted line under the video column heading. Leave blank for the site default.',
     }),
     defineField({
       name: 'videoOfferings',
