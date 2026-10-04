@@ -1705,9 +1705,24 @@ export default function TestingPackageBuilder({
     }
   }
 
+  // After submit the form collapses; without this the viewport stays on the page footer.
+  useEffect(() => {
+    if (!isSubmitted) return
+    const t = window.setTimeout(() => {
+      const target =
+        document.getElementById('package-builder-thank-you') ||
+        document.getElementById('builder')
+      target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 50)
+    return () => window.clearTimeout(t)
+  }, [isSubmitted])
+
   if (isSubmitted) {
     const thanks = (
-      <div className="relative z-10 flex items-center justify-center px-6 py-20">
+      <div
+        id="package-builder-thank-you"
+        className="relative z-10 flex items-center justify-center px-6 py-20 min-h-[50vh]"
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -3340,9 +3355,7 @@ export default function TestingPackageBuilder({
                     </span>
                   )}
                   {canSubmit && (
-                    <span>
-                      Ready to send—your package details go to our team via the CRM inbox.
-                    </span>
+                    <span>Ready to send—your package details go to our team.</span>
                   )}
                 </p>
                 <button
