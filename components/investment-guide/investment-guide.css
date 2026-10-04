@@ -1,0 +1,1068 @@
+/* Scoped Investment Guide (2026) — ivory / ink / champagne gold */
+
+.ig {
+  --ig-ivory: #f8f4ec;
+  --ig-ivory-2: #f1ebdf;
+  --ig-paper: #fcfaf5;
+  --ig-ink: #141210;
+  --ig-ink-2: #2b2723;
+  --ig-muted: #7a7166;
+  --ig-gold: #b89a5e;
+  --ig-gold-2: #d4be8a;
+  --ig-gold-soft: rgba(184, 154, 94, 0.35);
+  background: var(--ig-ivory);
+  color: var(--ig-ink);
+  font-family: var(--font-sans), 'Poppins', sans-serif;
+  font-weight: 300;
+  font-size: 15px;
+  line-height: 1.75;
+  overflow-x: hidden;
+}
+
+.ig * {
+  box-sizing: border-box;
+}
+
+.ig a {
+  color: inherit;
+}
+
+.ig-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+.ig-narrow {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.ig-eyebrow {
+  font-family: var(--font-sans), 'Poppins', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+  color: var(--ig-gold);
+  font-weight: 400;
+}
+
+.ig h1,
+.ig h2,
+.ig h3,
+.ig h4,
+.ig h5 {
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-weight: 300;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+}
+
+.ig h2 {
+  font-size: clamp(38px, 5vw, 64px);
+}
+
+.ig h3 {
+  font-size: clamp(28px, 3vw, 38px);
+}
+
+.ig em {
+  font-style: italic;
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+}
+
+.ig-rule {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin: 26px auto;
+}
+
+.ig-rule::before,
+.ig-rule::after {
+  content: '';
+  height: 1px;
+  width: 90px;
+  background: linear-gradient(90deg, transparent, var(--ig-gold));
+}
+
+.ig-rule::after {
+  background: linear-gradient(90deg, var(--ig-gold), transparent);
+}
+
+.ig-rule span {
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--ig-gold);
+  transform: rotate(45deg);
+}
+
+.ig-section {
+  padding: 130px 0;
+  scroll-margin-top: 72px;
+}
+
+#builder,
+#intimate,
+#weddings,
+#availability,
+#addons,
+#process,
+#faq,
+#choose {
+  scroll-margin-top: 72px;
+}
+
+.ig-center {
+  text-align: center;
+}
+
+.ig-lead {
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-size: clamp(20px, 2.1vw, 25px);
+  line-height: 1.55;
+  color: var(--ig-ink-2);
+  font-weight: 300;
+}
+
+.ig-small {
+  font-size: 12.5px;
+  color: var(--ig-muted);
+}
+
+/* Hero */
+.ig-hero {
+  position: relative;
+  min-height: 92vh;
+  display: flex;
+  align-items: flex-end;
+  color: #fff;
+  overflow: hidden;
+  background: #111;
+  /* Clear fixed site navbar */
+  padding-top: 5rem;
+}
+
+.ig-hero img,
+.ig-hero video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ig-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(10, 9, 8, 0.5) 0%, rgba(10, 9, 8, 0.15) 30%, rgba(10, 9, 8, 0.8) 100%),
+    linear-gradient(90deg, rgba(10, 9, 8, 0.55) 0%, rgba(10, 9, 8, 0) 65%);
+}
+
+.ig-hero .ig-eyebrow {
+  color: var(--ig-gold-2);
+}
+
+.ig-hero-inner {
+  position: relative;
+  z-index: 2;
+  padding: 0 40px 110px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.ig-hero h1 {
+  font-size: clamp(54px, 8.5vw, 118px);
+  line-height: 0.95;
+  margin: 22px 0 28px;
+}
+
+.ig-hero h1 em {
+  color: var(--ig-gold-2);
+}
+
+.ig-hero p {
+  max-width: 540px;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.ig-hero-meta {
+  display: flex;
+  gap: 40px;
+  margin-top: 44px;
+  padding-top: 26px;
+  border-top: 1px solid rgba(212, 190, 138, 0.45);
+  max-width: 640px;
+  flex-wrap: wrap;
+}
+
+.ig-hero-meta div {
+  font-size: 10.5px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.ig-hero-meta b {
+  display: block;
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: 26px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: #fff;
+  margin-bottom: 2px;
+}
+
+/* Jump nav */
+.ig-jump {
+  background: var(--ig-paper);
+  border-bottom: 1px solid var(--ig-gold-soft);
+  position: sticky;
+  /* Sit below the site’s fixed navbar (h-20) */
+  top: 5rem;
+  z-index: 10;
+}
+
+.ig-jump .ig-wrap {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+.ig-jump a {
+  text-decoration: none;
+  font-size: 10.5px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  padding: 9px 18px;
+  border: 1px solid transparent;
+  color: var(--ig-ink-2);
+  transition: border-color 0.3s;
+}
+
+.ig-jump a:hover {
+  border-color: var(--ig-gold);
+}
+
+/* Our Story */
+.ig-intro-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 90px;
+  align-items: center;
+}
+
+.ig-intro-figure {
+  position: relative;
+  z-index: 0;
+}
+
+.ig-intro-figure img {
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.ig-intro-figure::before {
+  content: '';
+  position: absolute;
+  inset: -18px 18px 18px -18px;
+  border: 1px solid var(--ig-gold);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.ig-sig {
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 30px;
+  margin-top: 26px;
+  color: var(--ig-ink-2);
+}
+
+.ig-intro-copy p + p {
+  margin-top: 16px;
+}
+
+/* Compare table */
+.ig-compare {
+  background: var(--ig-paper);
+}
+
+.ig-cmp {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 60px;
+}
+
+.ig-cmp th,
+.ig-cmp td {
+  padding: 22px 24px;
+  text-align: left;
+  border-bottom: 1px solid var(--ig-gold-soft);
+  vertical-align: top;
+}
+
+.ig-cmp thead th {
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: 30px;
+  border-bottom: 1px solid var(--ig-gold);
+}
+
+.ig-cmp thead th span {
+  display: block;
+  font-family: var(--font-sans), 'Poppins', sans-serif;
+  font-size: 10.5px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ig-gold);
+  margin-bottom: 6px;
+}
+
+.ig-cmp tbody th {
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ig-muted);
+  width: 22%;
+}
+
+.ig-cmp td {
+  font-size: 14.5px;
+  width: 39%;
+}
+
+.ig-cmp td b {
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-weight: 500;
+  font-size: 20px;
+}
+
+/* Collections */
+.ig-col-head {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 80px;
+  align-items: end;
+  margin-bottom: 70px;
+}
+
+.ig-col-head p {
+  color: var(--ig-ink-2);
+}
+
+.ig-tiers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+
+.ig-tier {
+  background: var(--ig-paper);
+  border: 1px solid var(--ig-gold-soft);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.ig-tier-ph {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  position: relative;
+}
+
+.ig-tier-ph img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 1.2s ease;
+}
+
+.ig-tier:hover .ig-tier-ph img {
+  transform: scale(1.04);
+}
+
+.ig-tier-body {
+  padding: 38px 34px 40px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.ig-tier-num {
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-style: italic;
+  color: var(--ig-gold);
+  font-size: 18px;
+}
+
+.ig-tier h4 {
+  font-size: 34px;
+  margin: 4px 0 6px;
+}
+
+.ig-tier-hours {
+  font-size: 10.5px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ig-muted);
+}
+
+.ig-price {
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-size: 44px;
+  font-weight: 300;
+  margin: 24px 0 4px;
+  line-height: 1;
+}
+
+.ig-price small {
+  font-family: var(--font-sans), 'Poppins', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--ig-muted);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.ig-price i {
+  font-style: normal;
+  font-family: var(--font-sans), 'Poppins', sans-serif;
+  font-size: 12px;
+  color: var(--ig-muted);
+  letter-spacing: 0.05em;
+}
+
+.ig-alt {
+  font-size: 12.5px;
+  color: var(--ig-muted);
+  margin-bottom: 22px;
+}
+
+.ig-tier-desc {
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--ig-ink-2);
+  padding: 20px 0;
+  border-top: 1px solid var(--ig-gold-soft);
+  border-bottom: 1px solid var(--ig-gold-soft);
+  margin-bottom: 22px;
+}
+
+.ig-tier ul {
+  list-style: none;
+  flex: 1;
+  padding: 0;
+  margin: 0;
+}
+
+.ig-tier li {
+  position: relative;
+  padding: 7px 0 7px 22px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  border-bottom: 1px dotted rgba(184, 154, 94, 0.25);
+}
+
+.ig-tier li:last-child {
+  border-bottom: 0;
+}
+
+.ig-tier li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 15px;
+  width: 5px;
+  height: 5px;
+  border: 1px solid var(--ig-gold);
+  transform: rotate(45deg);
+}
+
+.ig-tier .ig-btn {
+  margin-top: 30px;
+}
+
+.ig-tier.feature {
+  background: var(--ig-ink);
+  color: var(--ig-ivory);
+  border-color: var(--ig-gold);
+  transform: translateY(-22px);
+  box-shadow: 0 40px 80px -40px rgba(20, 18, 16, 0.55);
+}
+
+.ig-tier.feature .ig-tier-desc {
+  color: #e9e2d4;
+  border-color: rgba(212, 190, 138, 0.35);
+}
+
+.ig-tier.feature li {
+  border-color: rgba(212, 190, 138, 0.18);
+}
+
+.ig-tier.feature .ig-tier-hours,
+.ig-tier.feature .ig-price small,
+.ig-tier.feature .ig-price i,
+.ig-tier.feature .ig-alt {
+  color: #b4aa9a;
+}
+
+.ig-badge {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ig-gold);
+  color: var(--ig-ink);
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  padding: 7px 18px;
+  white-space: nowrap;
+  font-weight: 500;
+  z-index: 2;
+}
+
+.ig-btn {
+  display: inline-block;
+  text-align: center;
+  text-decoration: none;
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  padding: 16px 30px;
+  border: 1px solid var(--ig-ink);
+  color: var(--ig-ink);
+  transition: all 0.4s;
+  font-family: var(--font-sans), 'Poppins', sans-serif;
+  font-weight: 400;
+}
+
+.ig-btn:hover {
+  background: var(--ig-ink);
+  color: var(--ig-ivory);
+}
+
+.ig-tier.feature .ig-btn,
+.ig-btn.gold {
+  background: var(--ig-gold);
+  border-color: var(--ig-gold);
+  color: var(--ig-ink);
+}
+
+.ig-tier.feature .ig-btn:hover,
+.ig-btn.gold:hover {
+  background: transparent;
+  color: var(--ig-gold-2);
+}
+
+/* Single medium */
+.ig-single {
+  margin-top: 90px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+}
+
+.ig-single-card {
+  border: 1px solid var(--ig-gold-soft);
+  padding: 42px 40px;
+  background: transparent;
+}
+
+.ig-single-card h5 {
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: 30px;
+  margin-bottom: 6px;
+}
+
+.ig-single-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: baseline;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--ig-gold-soft);
+  font-size: 13.5px;
+}
+
+.ig-single-row:last-child {
+  border-bottom: 0;
+}
+
+.ig-single-row > span:last-child {
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-size: 24px;
+  white-space: nowrap;
+}
+
+.ig-single-row em {
+  display: block;
+  font-size: 12px;
+  color: var(--ig-muted);
+  font-style: normal;
+  font-family: var(--font-sans), 'Poppins', sans-serif;
+}
+
+/* Dark band */
+.ig-band {
+  background: var(--ig-ink);
+  color: var(--ig-ivory);
+  position: relative;
+  overflow: hidden;
+}
+
+.ig-band-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.28;
+}
+
+.ig-band .ig-wrap {
+  position: relative;
+}
+
+.ig-band h2 em {
+  color: var(--ig-gold-2);
+}
+
+/* Add-ons */
+.ig-addons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 80px;
+  margin-top: 60px;
+}
+
+.ig-addon {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 24px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--ig-gold-soft);
+}
+
+.ig-addon h6 {
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.ig-addon p {
+  font-size: 12.5px;
+  color: var(--ig-muted);
+  line-height: 1.5;
+  margin-top: 3px;
+}
+
+.ig-addon > span {
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-size: 24px;
+  white-space: nowrap;
+}
+
+.ig-addon-group {
+  grid-column: 1 / -1;
+  margin-top: 40px;
+  margin-bottom: 6px;
+}
+
+.ig-addon-group:first-child {
+  margin-top: 0;
+}
+
+/* Includes */
+.ig-incl {
+  background: var(--ig-ivory-2);
+}
+
+.ig-incl-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 60px 50px;
+  margin-top: 70px;
+}
+
+.ig-incl-grid > div {
+  border-top: 1px solid var(--ig-gold);
+  padding-top: 26px;
+}
+
+.ig-incl-n {
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-style: italic;
+  color: var(--ig-gold);
+  font-size: 20px;
+}
+
+.ig-incl-grid h4 {
+  font-size: 27px;
+  margin: 6px 0 10px;
+}
+
+.ig-incl-grid p {
+  font-size: 13.5px;
+  color: var(--ig-ink-2);
+}
+
+/* Process */
+.ig-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin-top: 70px;
+  border-top: 1px solid var(--ig-gold-soft);
+}
+
+.ig-steps > div {
+  padding: 40px 30px 10px;
+  border-right: 1px solid var(--ig-gold-soft);
+}
+
+.ig-steps > div:last-child {
+  border-right: 0;
+}
+
+.ig-steps-n {
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-size: 64px;
+  font-weight: 300;
+  color: var(--ig-gold);
+  line-height: 1;
+}
+
+.ig-steps h4 {
+  font-size: 26px;
+  margin: 14px 0 10px;
+}
+
+.ig-steps p {
+  font-size: 13.5px;
+  color: var(--ig-ink-2);
+}
+
+/* Builder embed */
+.ig-builder-section {
+  background: var(--ig-ivory-2);
+  padding: 130px 0 80px;
+}
+
+.ig-builder-shell {
+  background: var(--ig-ink);
+  border: 1px solid var(--ig-gold);
+  color: #fff;
+  overflow: hidden;
+}
+
+.ig-builder-shell > main {
+  min-height: 0 !important;
+  background: transparent !important;
+  overflow: visible !important;
+}
+
+/* FAQ */
+.ig-faq {
+  background: var(--ig-paper);
+}
+
+.ig-faq details {
+  border-bottom: 1px solid var(--ig-gold-soft);
+  padding: 26px 0;
+}
+
+.ig-faq details:first-of-type {
+  border-top: 1px solid var(--ig-gold);
+}
+
+.ig-faq summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-size: 24px;
+  font-weight: 400;
+}
+
+.ig-faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.ig-faq summary::after {
+  content: '+';
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  color: var(--ig-gold);
+  font-size: 30px;
+  line-height: 1;
+  transition: transform 0.3s;
+}
+
+.ig-faq details[open] summary::after {
+  transform: rotate(45deg);
+}
+
+.ig-faq details p {
+  margin-top: 14px;
+  color: var(--ig-ink-2);
+  font-size: 14.5px;
+  max-width: 680px;
+}
+
+.ig-faq-cat {
+  margin: 50px 0 14px;
+}
+
+/* CTA */
+.ig-cta {
+  position: relative;
+  color: #fff;
+  text-align: center;
+  padding: 170px 0;
+  overflow: hidden;
+  background: #111;
+}
+
+.ig-cta img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.55;
+}
+
+.ig-cta::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(10, 9, 8, 0.35), rgba(10, 9, 8, 0.8));
+}
+
+.ig-cta .ig-wrap {
+  position: relative;
+  z-index: 2;
+}
+
+.ig-cta h2 {
+  font-size: clamp(44px, 6vw, 84px);
+}
+
+.ig-cta h2 em {
+  color: var(--ig-gold-2);
+}
+
+.ig-cta p {
+  max-width: 520px;
+  margin: 0 auto 40px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.ig-cta .ig-btn {
+  border-color: var(--ig-gold-2);
+  color: #fff;
+  margin: 0 6px 12px;
+}
+
+.ig-cta .ig-btn:hover {
+  background: var(--ig-gold);
+  color: var(--ig-ink);
+}
+
+.ig-cta .ig-btn.gold {
+  color: var(--ig-ink);
+}
+
+@media (max-width: 1024px) {
+  .ig-tiers {
+    grid-template-columns: 1fr;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  .ig-tier.feature {
+    transform: none;
+  }
+
+  .ig-intro-grid,
+  .ig-col-head {
+    grid-template-columns: 1fr;
+    gap: 50px;
+  }
+
+  .ig-incl-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ig-steps {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ig-steps > div:nth-child(2) {
+    border-right: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .ig {
+    font-size: 14.5px;
+  }
+
+  .ig-hero::after {
+    background: linear-gradient(
+      180deg,
+      rgba(10, 9, 8, 0.55) 0%,
+      rgba(10, 9, 8, 0.45) 40%,
+      rgba(10, 9, 8, 0.85) 100%
+    );
+  }
+
+  .ig-hero img,
+  .ig-hero video {
+    object-position: 62% center;
+  }
+
+  .ig-cta .ig-btn {
+    display: block;
+    margin: 0 auto 12px;
+    max-width: 320px;
+  }
+
+  .ig-wrap {
+    padding: 0 22px;
+  }
+
+  .ig-section,
+  .ig-builder-section {
+    padding: 84px 0;
+  }
+
+  .ig-hero {
+    min-height: 88vh;
+  }
+
+  .ig-hero-inner {
+    padding: 0 22px 70px;
+  }
+
+  .ig-hero-meta {
+    gap: 22px;
+  }
+
+  .ig-hero-meta b {
+    font-size: 21px;
+  }
+
+  .ig-jump {
+    position: static;
+  }
+
+  .ig-jump .ig-wrap {
+    gap: 2px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .ig-jump a {
+    padding: 7px 10px;
+    font-size: 9.5px;
+    letter-spacing: 0.18em;
+  }
+
+  .ig-intro-figure::before {
+    inset: -10px 10px 10px -10px;
+  }
+
+  .ig-single,
+  .ig-addons {
+    grid-template-columns: 1fr;
+  }
+
+  .ig-addons {
+    gap: 0;
+  }
+
+  .ig-single-card {
+    padding: 32px 24px;
+  }
+
+  .ig-tier-body {
+    padding: 30px 24px 32px;
+  }
+
+  .ig-incl-grid,
+  .ig-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .ig-steps > div {
+    border-right: 0;
+    border-bottom: 1px solid var(--ig-gold-soft);
+    padding: 30px 0;
+  }
+
+  .ig-cmp,
+  .ig-cmp thead,
+  .ig-cmp tbody,
+  .ig-cmp tr,
+  .ig-cmp th,
+  .ig-cmp td {
+    display: block;
+    width: 100% !important;
+  }
+
+  .ig-cmp thead {
+    display: none;
+  }
+
+  .ig-cmp tr {
+    border-bottom: 1px solid var(--ig-gold);
+    padding: 18px 0;
+  }
+
+  .ig-cmp th,
+  .ig-cmp td {
+    border: 0;
+    padding: 6px 0;
+  }
+
+  .ig-cmp td::before {
+    content: attr(data-l);
+    display: block;
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--ig-gold);
+  }
+
+  .ig-faq summary {
+    font-size: 21px;
+  }
+
+  .ig-cta {
+    padding: 110px 0;
+  }
+}

@@ -10,7 +10,7 @@ export default defineType({
       title: 'Page Title',
       type: 'string',
       description: 'Main headline on the investment page and synced package builders.',
-      initialValue: 'Investment Guide 2025'
+      initialValue: 'Investment Guide 2026'
     }),
 
     defineField({
@@ -169,9 +169,10 @@ export default defineType({
     // SEASONAL & INTIMATE COLLECTIONS
     defineField({
       name: 'seasonalCollections',
-      title: 'Seasonal & Intimate Collections',
+      title: 'Elopement & Intimate Collections',
       type: 'object',
-      description: 'Special pricing for elopements, micro-weddings, and intimate celebrations',
+      description:
+        'Legacy CMS block for personalized /investment/[slug] pages. Public Investment Guide lives at /investment/package-builder. Do not enter availability date windows — couples inquire for their date.',
       fields: [
         {
           name: 'enabled',
@@ -184,13 +185,14 @@ export default defineType({
           name: 'sectionTitle',
           title: 'Section Title',
           type: 'string',
-          initialValue: 'The Seasonal & Intimate Collections'
+          initialValue: 'Elopement & Intimate Collections'
         },
         {
           name: 'availability',
-          title: 'Availability Note',
+          title: 'Availability Note (unused on site)',
           type: 'text',
-          description: 'e.g., "November 1 – March 31 (Any Day) | April 1 – October 31 (Mon–Thu Only)"'
+          description:
+            'Deprecated. Never publish date windows (e.g. Nov–Mar / Mon–Thu). The live site does not display this field — couples inquire for availability.'
         },
         {
           name: 'tiers',

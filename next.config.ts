@@ -18,6 +18,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/investment/seasonal-and-intimate-collections',
+        destination: '/investment/package-builder?section=intimate',
+        permanent: true,
+      },
+    ]
+  },
 };
 
 export default nextConfig;

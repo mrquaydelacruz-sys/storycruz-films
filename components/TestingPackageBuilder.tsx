@@ -54,6 +54,14 @@ import {
 type TestingPackageBuilderProps = PackageBuilderResolvedProps & {
   /** Sent to CRM so you know which share link this submission came from. */
   submissionSlug?: string | null
+  /**
+   * When true, skip the standalone hero / FAQ shell (used inside the Investment Guide page).
+   */
+  embedMode?: boolean
+}
+
+function isIntimateAppendixId(id: string): boolean {
+  return id.startsWith('invest-intimate-') || id.startsWith('invest-season-')
 }
 
 type EventType = 'wedding' | 'commercial' | 'birthday' | 'custom' | null
@@ -956,6 +964,7 @@ export default function TestingPackageBuilder({
   heroVideoSrc = null,
   faqs = [],
   submissionSlug = null,
+  embedMode = false,
 }: TestingPackageBuilderProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
@@ -1076,15 +1085,24 @@ export default function TestingPackageBuilder({
     [photoFilmBundleOffers]
   )
 
-  /** Core guide rows (`pricing.photoPackages` + brief) — excludes `invest-season-*` appendix. */
+  /** Core guide rows — excludes elopement / intimate appendix ids. */
   const photoCatalogCollections = useMemo(
-    () => photoCatalog.filter((i) => !i.id.startsWith('invest-season-')),
+    () => photoCatalog.filter((i) => !isIntimateAppendixId(i.id)),
     [photoCatalog]
   )
-  /** Seasonal & intimate appendix (non-combo); Signature Combos stay in `photoFilmBundleOffers`. */
+  /** Elopement & Intimate appendix (non-combo); wedding photo+film stays in `photoFilmBundleOffers`. */
   const photoCatalogSeasonal = useMemo(
-    () => photoCatalog.filter((i) => i.id.startsWith('invest-season-')),
+    () => photoCatalog.filter((i) => isIntimateAppendixId(i.id)),
     [photoCatalog]
+  )
+
+  const videoCatalogCollections = useMemo(
+    () => videoCatalog.filter((i) => !isIntimateAppendixId(i.id)),
+    [videoCatalog]
+  )
+  const videoCatalogIntimate = useMemo(
+    () => videoCatalog.filter((i) => isIntimateAppendixId(i.id)),
+    [videoCatalog]
   )
 
   const visiblePhotoCollections = useMemo(() => {
@@ -1097,10 +1115,15 @@ export default function TestingPackageBuilder({
     return photoCatalogSeasonal.filter((i) => photoSelected.has(i.id))
   }, [photoCatalogSeasonal, photoSelected, photoBrowseAllTiers])
 
-  const visibleVideoPackages = useMemo(() => {
-    if (videoSelected.size === 0 || videoBrowseAllTiers) return videoCatalog
-    return videoCatalog.filter((i) => videoSelected.has(i.id))
-  }, [videoCatalog, videoSelected, videoBrowseAllTiers])
+  const visibleVideoCollections = useMemo(() => {
+    if (videoSelected.size === 0 || videoBrowseAllTiers) return videoCatalogCollections
+    return videoCatalogCollections.filter((i) => videoSelected.has(i.id))
+  }, [videoCatalogCollections, videoSelected, videoBrowseAllTiers])
+
+  const visibleVideoIntimate = useMemo(() => {
+    if (videoSelected.size === 0 || videoBrowseAllTiers) return videoCatalogIntimate
+    return videoCatalogIntimate.filter((i) => videoSelected.has(i.id))
+  }, [videoCatalogIntimate, videoSelected, videoBrowseAllTiers])
 
   /** Includes seasonal combo tiers (not listed in main column until “bundles” is opened). */
   const photoCatalogForSelections = useMemo(() => {
@@ -1574,37 +1597,43 @@ export default function TestingPackageBuilder({
   }
 
   if (isSubmitted) {
+    const thanks = (
+      <div className="relative z-10 flex items-center justify-center px-6 py-20">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center max-w-2xl"
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+            className="w-24 h-24 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-8"
+          >
+            <CheckCircle className="w-12 h-12 text-accent" />
+          </motion.div>
+          <h1 className="text-4xl md:text-5xl font-serif text-white mb-6">Thank you!</h1>
+          <p className="text-lg text-white/70 mb-8 leading-relaxed">
+            Your package details were sent to our team. We&apos;ll review your selections and reply
+            within <span className="text-accent font-semibold">24–48 hours</span>.
+          </p>
+          <a
+            href="/"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-accent hover:bg-accent/90 text-white font-semibold uppercase tracking-wider text-sm rounded-full transition-all duration-300"
+          >
+            Return home
+            <ArrowRight className="w-4 h-4" />
+          </a>
+        </motion.div>
+      </div>
+    )
+    if (embedMode) {
+      return <div className="bg-[#141210] text-white relative overflow-hidden">{thanks}</div>
+    }
     return (
       <main className="min-h-screen bg-black text-white relative overflow-hidden">
         <BackgroundWater />
-        <div className="relative z-10 min-h-screen flex items-center justify-center px-6">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center max-w-2xl"
-          >
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-              className="w-24 h-24 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-8"
-            >
-              <CheckCircle className="w-12 h-12 text-accent" />
-            </motion.div>
-            <h1 className="text-4xl md:text-5xl font-serif text-white mb-6">Thank you!</h1>
-            <p className="text-lg text-white/70 mb-8 leading-relaxed">
-              Your package details were sent to our team. We&apos;ll review your selections and reply
-              within <span className="text-accent font-semibold">24–48 hours</span>.
-            </p>
-            <a
-              href="/"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-accent hover:bg-accent/90 text-white font-semibold uppercase tracking-wider text-sm rounded-full transition-all duration-300"
-            >
-              Return home
-              <ArrowRight className="w-4 h-4" />
-            </a>
-          </motion.div>
-        </div>
+        <div className="min-h-screen">{thanks}</div>
       </main>
     )
   }
@@ -1721,20 +1750,23 @@ export default function TestingPackageBuilder({
     />
   )
 
-  return (
-    <main
-      className={`min-h-screen relative overflow-hidden text-white selection:bg-white/20 ${
+  const shellClass = embedMode
+    ? 'relative overflow-hidden text-white selection:bg-white/20 bg-[#141210]'
+    : `min-h-screen relative overflow-hidden text-white selection:bg-white/20 ${
         useInvestmentStyleHero ? 'bg-[#050505]' : 'bg-black'
-      }`}
-    >
-      {useInvestmentStyleHero ? (
+      }`
+
+  const body = (
+    <>
+      {!embedMode && useInvestmentStyleHero ? (
         <InvestmentGuideHero
           title={title}
           eyebrow={eyebrow}
           tagline={intro}
           videoSrc={heroVideoSrc ?? DEFAULT_PACKAGE_HERO_MP4}
         />
-      ) : (
+      ) : null}
+      {!embedMode && !useInvestmentStyleHero ? (
         <>
           <BackgroundWater />
           <div className="relative z-10 pt-32 pb-0 px-6 md:px-12">
@@ -1755,10 +1787,16 @@ export default function TestingPackageBuilder({
             </div>
           </div>
         </>
-      )}
+      ) : null}
 
       <div
-        className={`relative z-20 px-6 md:px-12 pb-24 ${useInvestmentStyleHero ? '-mt-32 pt-8' : 'pt-12'}`}
+        className={`relative z-20 px-6 md:px-12 ${
+          embedMode
+            ? 'pb-12 pt-10'
+            : useInvestmentStyleHero
+              ? '-mt-32 pt-8 pb-24'
+              : 'pt-12 pb-24'
+        }`}
       >
         <div className="max-w-6xl mx-auto">
           <form onSubmit={handleSubmit}>
@@ -1934,7 +1972,9 @@ export default function TestingPackageBuilder({
                 {visiblePhotoSeasonal.length > 0 ? (
                   <div>
                     <h3 className="text-[11px] font-semibold text-white/50 uppercase tracking-[0.2em] mb-4">
-                      {photoCatalogCollections.length > 0 ? 'Seasonal collections' : 'Photography collections'}
+                      {photoCatalogCollections.length > 0
+                        ? 'Elopement & Intimate (40 guests or fewer)'
+                        : 'Photography collections'}
                     </h3>
                     <ul className="space-y-4">
                       {visiblePhotoSeasonal.map(renderPhotoTierItem)}
@@ -1992,125 +2032,256 @@ export default function TestingPackageBuilder({
                   </div>
                 ) : null}
 
-                <ul className="space-y-4">
-                  {visibleVideoPackages.map((item) => (
-                    <CatalogOption
-                      key={item.id}
-                      item={item}
-                      selected={videoSelected.has(item.id)}
-                      enhancementCatalog={addonCatalog}
-                      enhancementSectionTitle={addonSectionTitle}
-                      enhancementSectionSubtitle={addonSectionSubtitle}
-                      enhancementSelectedIds={
-                        videoEnhanceByTier[item.id] ?? FALLBACK_EMPTY_OPTIONAL
-                      }
-                      onAddEnhancement={(addonId) => {
-                        setVideoEnhanceByTier((prev) => {
-                          const base = new Set(prev[item.id] ?? [])
-                          if (base.has(addonId)) return prev
-                          base.add(addonId)
-                          return { ...prev, [item.id]: base }
-                        })
-                      }}
-                      onRemoveEnhancement={(addonId) => {
-                        setVideoEnhanceByTier((prev) => {
-                          const base = new Set(prev[item.id] ?? [])
-                          base.delete(addonId)
-                          const merged = { ...prev }
-                          if (base.size === 0) delete merged[item.id]
-                          else merged[item.id] = base
-                          return merged
-                        })
-                        setVideoEnhanceLineExcl((nex) => {
-                          const tier = nex[item.id]
-                          if (!tier?.[addonId]) return nex
-                          const tierNext = { ...tier }
-                          delete tierNext[addonId]
-                          const merged = { ...nex }
-                          if (Object.keys(tierNext).length === 0) delete merged[item.id]
-                          else merged[item.id] = tierNext
-                          return merged
-                        })
-                      }}
-                      enhancementLineExclusionsGetter={(addonId) =>
-                        getVideoEnhancementExcluded(item.id, addonId)
-                      }
-                      onEnhancementLineIncludeChange={(addonId, lineId, nowIncluded) => {
-                        setVideoEnhanceLineExcl((prev) => {
-                          const tierNested = prev[item.id] ?? {}
-                          const cur = new Set(tierNested[addonId] ?? [])
-                          if (nowIncluded) cur.delete(lineId)
-                          else cur.add(lineId)
-                          return {
-                            ...prev,
-                            [item.id]: { ...tierNested, [addonId]: cur },
+                {visibleVideoCollections.length > 0 ? (
+                  <div className={visibleVideoIntimate.length > 0 ? 'mb-8' : ''}>
+                    <ul className="space-y-4">
+                      {visibleVideoCollections.map((item) => (
+                        <CatalogOption
+                          key={item.id}
+                          item={item}
+                          selected={videoSelected.has(item.id)}
+                          enhancementCatalog={addonCatalog}
+                          enhancementSectionTitle={addonSectionTitle}
+                          enhancementSectionSubtitle={addonSectionSubtitle}
+                          enhancementSelectedIds={
+                            videoEnhanceByTier[item.id] ?? FALLBACK_EMPTY_OPTIONAL
                           }
-                        })
-                      }}
-                      optionalSelectedIds={
-                        videoPackageOptionalAdds[item.id] ?? FALLBACK_EMPTY_OPTIONAL
-                      }
-                      onToggleOptionalAdd={(addonId) => {
-                        setVideoPackageOptionalAdds((prev) => {
-                          const base = new Set(prev[item.id] ?? [])
-                          return {
-                            ...prev,
-                            [item.id]: toggleInSet(base, addonId),
+                          onAddEnhancement={(addonId) => {
+                            setVideoEnhanceByTier((prev) => {
+                              const base = new Set(prev[item.id] ?? [])
+                              if (base.has(addonId)) return prev
+                              base.add(addonId)
+                              return { ...prev, [item.id]: base }
+                            })
+                          }}
+                          onRemoveEnhancement={(addonId) => {
+                            setVideoEnhanceByTier((prev) => {
+                              const base = new Set(prev[item.id] ?? [])
+                              base.delete(addonId)
+                              const merged = { ...prev }
+                              if (base.size === 0) delete merged[item.id]
+                              else merged[item.id] = base
+                              return merged
+                            })
+                            setVideoEnhanceLineExcl((nex) => {
+                              const tier = nex[item.id]
+                              if (!tier?.[addonId]) return nex
+                              const tierNext = { ...tier }
+                              delete tierNext[addonId]
+                              const merged = { ...nex }
+                              if (Object.keys(tierNext).length === 0) delete merged[item.id]
+                              else merged[item.id] = tierNext
+                              return merged
+                            })
+                          }}
+                          enhancementLineExclusionsGetter={(addonId) =>
+                            getVideoEnhancementExcluded(item.id, addonId)
                           }
-                        })
-                      }}
-                      excludedLineIds={
-                        videoLineExclusions[item.id] ?? emptyExcluded
-                      }
-                      onLineIncludeChange={(lineId, nowIncluded) => {
-                        setVideoLineExclusions((prev) => {
-                          const cur = new Set(prev[item.id] ?? [])
-                          if (nowIncluded) cur.delete(lineId)
-                          else cur.add(lineId)
-                          return { ...prev, [item.id]: cur }
-                        })
-                      }}
-                      coverageHoursDeducted={videoCoverageHourDeduction[item.id] ?? 0}
-                      onCoverageHoursChange={(next) =>
-                        setVideoCoverageHourDeduction((prev) => ({
-                          ...prev,
-                          [item.id]: clampCoverageHoursDeducted(next),
-                        }))
-                      }
-                      onToggle={() => {
-                        const removing = videoSelected.has(item.id)
-                        setVideoSelected((prev) => toggleInSet(prev, item.id))
-                        if (removing) {
-                          setVideoLineExclusions((er) => {
-                            const next = { ...er }
-                            delete next[item.id]
-                            return next
-                          })
-                          setVideoPackageOptionalAdds((va) => {
-                            const next = { ...va }
-                            delete next[item.id]
-                            return next
-                          })
-                          setVideoEnhanceByTier((en) => {
-                            const next = { ...en }
-                            delete next[item.id]
-                            return next
-                          })
-                          setVideoEnhanceLineExcl((exn) => {
-                            const next = { ...exn }
-                            delete next[item.id]
-                            return next
-                          })
-                          setVideoCoverageHourDeduction((hr) => {
-                            const next = { ...hr }
-                            delete next[item.id]
-                            return next
-                          })
-                        }
-                      }}
-                    />
-                  ))}
-                </ul>
+                          onEnhancementLineIncludeChange={(addonId, lineId, nowIncluded) => {
+                            setVideoEnhanceLineExcl((prev) => {
+                              const tierNested = prev[item.id] ?? {}
+                              const cur = new Set(tierNested[addonId] ?? [])
+                              if (nowIncluded) cur.delete(lineId)
+                              else cur.add(lineId)
+                              return {
+                                ...prev,
+                                [item.id]: { ...tierNested, [addonId]: cur },
+                              }
+                            })
+                          }}
+                          optionalSelectedIds={
+                            videoPackageOptionalAdds[item.id] ?? FALLBACK_EMPTY_OPTIONAL
+                          }
+                          onToggleOptionalAdd={(addonId) => {
+                            setVideoPackageOptionalAdds((prev) => {
+                              const base = new Set(prev[item.id] ?? [])
+                              return {
+                                ...prev,
+                                [item.id]: toggleInSet(base, addonId),
+                              }
+                            })
+                          }}
+                          excludedLineIds={
+                            videoLineExclusions[item.id] ?? emptyExcluded
+                          }
+                          onLineIncludeChange={(lineId, nowIncluded) => {
+                            setVideoLineExclusions((prev) => {
+                              const cur = new Set(prev[item.id] ?? [])
+                              if (nowIncluded) cur.delete(lineId)
+                              else cur.add(lineId)
+                              return { ...prev, [item.id]: cur }
+                            })
+                          }}
+                          coverageHoursDeducted={videoCoverageHourDeduction[item.id] ?? 0}
+                          onCoverageHoursChange={(next) =>
+                            setVideoCoverageHourDeduction((prev) => ({
+                              ...prev,
+                              [item.id]: clampCoverageHoursDeducted(next),
+                            }))
+                          }
+                          onToggle={() => {
+                            const removing = videoSelected.has(item.id)
+                            setVideoSelected((prev) => toggleInSet(prev, item.id))
+                            if (removing) {
+                              setVideoLineExclusions((er) => {
+                                const next = { ...er }
+                                delete next[item.id]
+                                return next
+                              })
+                              setVideoPackageOptionalAdds((va) => {
+                                const next = { ...va }
+                                delete next[item.id]
+                                return next
+                              })
+                              setVideoEnhanceByTier((en) => {
+                                const next = { ...en }
+                                delete next[item.id]
+                                return next
+                              })
+                              setVideoEnhanceLineExcl((exn) => {
+                                const next = { ...exn }
+                                delete next[item.id]
+                                return next
+                              })
+                              setVideoCoverageHourDeduction((hr) => {
+                                const next = { ...hr }
+                                delete next[item.id]
+                                return next
+                              })
+                            }
+                          }}
+                        />
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                {visibleVideoIntimate.length > 0 ? (
+                  <div>
+                    <h3 className="text-[11px] font-semibold text-white/50 uppercase tracking-[0.2em] mb-4">
+                      Elopement & Intimate (40 guests or fewer)
+                    </h3>
+                    <ul className="space-y-4">
+                      {visibleVideoIntimate.map((item) => (
+                        <CatalogOption
+                          key={item.id}
+                          item={item}
+                          selected={videoSelected.has(item.id)}
+                          enhancementCatalog={addonCatalog}
+                          enhancementSectionTitle={addonSectionTitle}
+                          enhancementSectionSubtitle={addonSectionSubtitle}
+                          enhancementSelectedIds={
+                            videoEnhanceByTier[item.id] ?? FALLBACK_EMPTY_OPTIONAL
+                          }
+                          onAddEnhancement={(addonId) => {
+                            setVideoEnhanceByTier((prev) => {
+                              const base = new Set(prev[item.id] ?? [])
+                              if (base.has(addonId)) return prev
+                              base.add(addonId)
+                              return { ...prev, [item.id]: base }
+                            })
+                          }}
+                          onRemoveEnhancement={(addonId) => {
+                            setVideoEnhanceByTier((prev) => {
+                              const base = new Set(prev[item.id] ?? [])
+                              base.delete(addonId)
+                              const merged = { ...prev }
+                              if (base.size === 0) delete merged[item.id]
+                              else merged[item.id] = base
+                              return merged
+                            })
+                            setVideoEnhanceLineExcl((nex) => {
+                              const tier = nex[item.id]
+                              if (!tier?.[addonId]) return nex
+                              const tierNext = { ...tier }
+                              delete tierNext[addonId]
+                              const merged = { ...nex }
+                              if (Object.keys(tierNext).length === 0) delete merged[item.id]
+                              else merged[item.id] = tierNext
+                              return merged
+                            })
+                          }}
+                          enhancementLineExclusionsGetter={(addonId) =>
+                            getVideoEnhancementExcluded(item.id, addonId)
+                          }
+                          onEnhancementLineIncludeChange={(addonId, lineId, nowIncluded) => {
+                            setVideoEnhanceLineExcl((prev) => {
+                              const tierNested = prev[item.id] ?? {}
+                              const cur = new Set(tierNested[addonId] ?? [])
+                              if (nowIncluded) cur.delete(lineId)
+                              else cur.add(lineId)
+                              return {
+                                ...prev,
+                                [item.id]: { ...tierNested, [addonId]: cur },
+                              }
+                            })
+                          }}
+                          optionalSelectedIds={
+                            videoPackageOptionalAdds[item.id] ?? FALLBACK_EMPTY_OPTIONAL
+                          }
+                          onToggleOptionalAdd={(addonId) => {
+                            setVideoPackageOptionalAdds((prev) => {
+                              const base = new Set(prev[item.id] ?? [])
+                              return {
+                                ...prev,
+                                [item.id]: toggleInSet(base, addonId),
+                              }
+                            })
+                          }}
+                          excludedLineIds={
+                            videoLineExclusions[item.id] ?? emptyExcluded
+                          }
+                          onLineIncludeChange={(lineId, nowIncluded) => {
+                            setVideoLineExclusions((prev) => {
+                              const cur = new Set(prev[item.id] ?? [])
+                              if (nowIncluded) cur.delete(lineId)
+                              else cur.add(lineId)
+                              return { ...prev, [item.id]: cur }
+                            })
+                          }}
+                          coverageHoursDeducted={videoCoverageHourDeduction[item.id] ?? 0}
+                          onCoverageHoursChange={(next) =>
+                            setVideoCoverageHourDeduction((prev) => ({
+                              ...prev,
+                              [item.id]: clampCoverageHoursDeducted(next),
+                            }))
+                          }
+                          onToggle={() => {
+                            const removing = videoSelected.has(item.id)
+                            setVideoSelected((prev) => toggleInSet(prev, item.id))
+                            if (removing) {
+                              setVideoLineExclusions((er) => {
+                                const next = { ...er }
+                                delete next[item.id]
+                                return next
+                              })
+                              setVideoPackageOptionalAdds((va) => {
+                                const next = { ...va }
+                                delete next[item.id]
+                                return next
+                              })
+                              setVideoEnhanceByTier((en) => {
+                                const next = { ...en }
+                                delete next[item.id]
+                                return next
+                              })
+                              setVideoEnhanceLineExcl((exn) => {
+                                const next = { ...exn }
+                                delete next[item.id]
+                                return next
+                              })
+                              setVideoCoverageHourDeduction((hr) => {
+                                const next = { ...hr }
+                                delete next[item.id]
+                                return next
+                              })
+                            }
+                          }}
+                        />
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
               </motion.section>
             </div>
 
@@ -2980,7 +3151,7 @@ export default function TestingPackageBuilder({
             </motion.div>
           </form>
 
-          {faqs.length > 0 ? (
+          {!embedMode && faqs.length > 0 ? (
             <section className="mt-10">
               <div className="flex justify-center">
                 <button
@@ -3022,6 +3193,12 @@ export default function TestingPackageBuilder({
           </p>
         </div>
       </div>
-    </main>
+    </>
   )
+
+  if (embedMode) {
+    return <div className={shellClass}>{body}</div>
+  }
+
+  return <main className={shellClass}>{body}</main>
 }

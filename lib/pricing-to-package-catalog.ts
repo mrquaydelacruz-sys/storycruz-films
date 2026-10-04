@@ -177,7 +177,7 @@ export function seasonalCollectionsToCatalog(seasonal: unknown): PackageCatalogI
       section && `(${section})`,
       tier.duration?.trim() && `Duration: ${tier.duration.trim()}`,
       tier.tagline?.trim(),
-      s.availability?.trim(),
+      // Never surface CMS availability date windows in the builder.
     ].filter(Boolean) as string[]
 
     const baseDesc = introBits.join(' · ') || ''

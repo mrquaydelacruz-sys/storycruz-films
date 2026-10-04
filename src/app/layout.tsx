@@ -7,14 +7,15 @@ import "./globals.css";
 const serif = Cormorant_Garamond({
   variable: "--font-serif",
   subsets: ["latin"],
-  weight: ["400", "600"],
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
   display: "swap",
 });
 
 const sans = Poppins({
   variable: "--font-sans",
   subsets: ["latin"],
-  weight: ["400", "600"],
+  weight: ["300", "400", "500", "600"],
   display: "swap",
 });
 

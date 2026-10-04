@@ -141,14 +141,10 @@ export default async function InvestmentPage({ params }: { params: { slug: strin
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-serif mb-6 flex items-center justify-center gap-4">
                 <span className="h-[1px] w-16 bg-white/20"></span>
-                {data.seasonalCollections.sectionTitle || "Seasonal Collections"}
+                {data.seasonalCollections.sectionTitle || "Elopement & Intimate Collections"}
                 <span className="h-[1px] w-16 bg-white/20"></span>
               </h2>
-              {data.seasonalCollections.availability && (
-                <p className="text-white/50 text-sm tracking-wide max-w-2xl mx-auto">
-                  {data.seasonalCollections.availability}
-                </p>
-              )}
+              {/* Availability windows are never shown site-wide — couples inquire for their date. */}
             </div>
 
             <div className="space-y-16">
@@ -304,7 +300,7 @@ export default async function InvestmentPage({ params }: { params: { slug: strin
 
         <div className="text-center mt-20 max-w-2xl mx-auto">
             <p className="text-white/30 text-xs tracking-widest uppercase">
-                Story Cruz Films • Investment Guide 2025
+                Story Cruz Films • Investment Guide 2026
             </p>
         </div>
       </section>
