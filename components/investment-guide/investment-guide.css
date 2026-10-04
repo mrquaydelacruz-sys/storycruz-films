@@ -495,8 +495,16 @@
   transform: rotate(45deg);
 }
 
-.ig-tier .ig-btn {
+.ig-tier-actions {
   margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ig-tier-actions .ig-btn {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .ig-tier.feature {
@@ -559,16 +567,37 @@
   color: var(--ig-ivory);
 }
 
-.ig-tier.feature .ig-btn,
+.ig-tier.feature .ig-btn:not(.ghost),
 .ig-btn.gold {
   background: var(--ig-gold);
   border-color: var(--ig-gold);
   color: var(--ig-ink);
 }
 
-.ig-tier.feature .ig-btn:hover,
+.ig-tier.feature .ig-btn:not(.ghost):hover,
 .ig-btn.gold:hover {
   background: transparent;
+  color: var(--ig-gold-2);
+}
+
+.ig-btn.ghost {
+  background: transparent;
+  border-color: rgba(20, 18, 16, 0.35);
+  color: var(--ig-ink);
+}
+
+.ig-btn.ghost:hover {
+  background: rgba(20, 18, 16, 0.06);
+  color: var(--ig-ink);
+}
+
+.ig-tier.feature .ig-btn.ghost {
+  border-color: rgba(212, 190, 138, 0.55);
+  color: #e9e2d4;
+}
+
+.ig-tier.feature .ig-btn.ghost:hover {
+  background: rgba(212, 190, 138, 0.12);
   color: var(--ig-gold-2);
 }
 

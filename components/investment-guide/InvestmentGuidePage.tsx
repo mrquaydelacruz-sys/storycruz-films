@@ -36,7 +36,7 @@ function TierCard({
   description,
   inclusions,
   featured,
-  cta,
+  packageId,
   image,
   imageAlt,
 }: {
@@ -49,10 +49,13 @@ function TierCard({
   description: string
   inclusions: readonly string[]
   featured: boolean
-  cta: string
+  packageId: string
   image: string
   imageAlt: string
 }) {
+  const useHref = `?package=${encodeURIComponent(packageId)}#builder`
+  const customizeHref = `?package=${encodeURIComponent(packageId)}&customize=1#builder`
+
   return (
     <article className={`ig-tier${featured ? ' feature' : ''}`}>
       {featured ? <span className="ig-badge">Most Booked</span> : null}
@@ -74,9 +77,14 @@ function TierCard({
             <li key={line}>{line}</li>
           ))}
         </ul>
-        <Link className="ig-btn" href="/inquire">
-          {cta}
-        </Link>
+        <div className="ig-tier-actions">
+          <Link className="ig-btn" href={useHref}>
+            Use this collection
+          </Link>
+          <Link className="ig-btn ghost" href={customizeHref}>
+            Customize
+          </Link>
+        </div>
       </div>
     </article>
   )
@@ -454,8 +462,8 @@ export default function InvestmentGuidePage({ builder, heroVideoSrc }: Props) {
             </h2>
             <GoldRule />
             <p className="ig-lead">
-              Select collections, customize inclusions, and send your draft. Approximate totals are
-              before tax (GST not included).
+              Choose a collection above to use it as-is or customize inclusions, then send your
+              draft. Approximate totals are before tax (GST not included).
             </p>
           </div>
           <div className="ig-builder-shell">{builder}</div>

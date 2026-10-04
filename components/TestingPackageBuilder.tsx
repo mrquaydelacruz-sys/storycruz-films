@@ -1,6 +1,15 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from 'react'
+import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Camera,
@@ -81,6 +90,87 @@ const ADDON_ROLLUP_HINT: Record<string, string> = {
 
 const FALLBACK_EMPTY_OPTIONAL = new Set<string>()
 
+type GuidePackageUrlSyncProps = {
+  photoCatalogIds: Set<string>
+  photoFilmBundleIdSet: Set<string>
+  videoCatalogIds: Set<string>
+  setPhotoSelected: Dispatch<SetStateAction<Set<string>>>
+  setVideoSelected: Dispatch<SetStateAction<Set<string>>>
+  setPhotoBrowseAllTiers: Dispatch<SetStateAction<boolean>>
+  setVideoBrowseAllTiers: Dispatch<SetStateAction<boolean>>
+  setPhotoFilmBrowseAllBundles: Dispatch<SetStateAction<boolean>>
+  setGuideCustomizePackageId: Dispatch<SetStateAction<string | null>>
+  setEventType: Dispatch<SetStateAction<EventType>>
+}
+
+/** Reads `?package=` / `&customize=1` from Investment Guide collection cards. */
+function GuidePackageUrlSync({
+  photoCatalogIds,
+  photoFilmBundleIdSet,
+  videoCatalogIds,
+  setPhotoSelected,
+  setVideoSelected,
+  setPhotoBrowseAllTiers,
+  setVideoBrowseAllTiers,
+  setPhotoFilmBrowseAllBundles,
+  setGuideCustomizePackageId,
+  setEventType,
+}: GuidePackageUrlSyncProps) {
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const packageId = searchParams.get('package')?.trim()
+    if (!packageId) {
+      setGuideCustomizePackageId(null)
+      return
+    }
+
+    const customize = searchParams.get('customize') === '1'
+    const inPhoto = photoCatalogIds.has(packageId)
+    const inBundle = photoFilmBundleIdSet.has(packageId)
+    const inVideo = videoCatalogIds.has(packageId)
+    if (!inPhoto && !inBundle && !inVideo) return
+
+    if (inPhoto || inBundle) {
+      setPhotoSelected(new Set([packageId]))
+      setPhotoBrowseAllTiers(false)
+      setPhotoFilmBrowseAllBundles(false)
+    } else if (inVideo) {
+      setVideoSelected(new Set([packageId]))
+      setVideoBrowseAllTiers(false)
+    }
+
+    setGuideCustomizePackageId(customize ? packageId : null)
+    setEventType((prev) => prev ?? 'wedding')
+
+    const scrollTargetId = customize
+      ? `package-card-${packageId}`
+      : 'package-builder-review-and-notes'
+
+    const t = window.setTimeout(() => {
+      document.getElementById(scrollTargetId)?.scrollIntoView({
+        behavior: 'smooth',
+        block: customize ? 'center' : 'start',
+      })
+    }, 160)
+    return () => window.clearTimeout(t)
+  }, [
+    searchParams,
+    photoCatalogIds,
+    photoFilmBundleIdSet,
+    videoCatalogIds,
+    setPhotoSelected,
+    setVideoSelected,
+    setPhotoBrowseAllTiers,
+    setVideoBrowseAllTiers,
+    setPhotoFilmBrowseAllBundles,
+    setGuideCustomizePackageId,
+    setEventType,
+  ])
+
+  return null
+}
+
 function CatalogOption({
   item,
   selected,
@@ -100,6 +190,7 @@ function CatalogOption({
   onEnhancementLineIncludeChange = () => {},
   coverageHoursDeducted = 0,
   onCoverageHoursChange,
+  preferCustomOpen = false,
 }: {
   item: PackageCatalogItem
   selected: boolean
@@ -127,6 +218,8 @@ function CatalogOption({
   /** Capped by site rules; only shown when the tier enables coverage deduction in Sanity. */
   coverageHoursDeducted?: number
   onCoverageHoursChange?: (nextHours: number) => void
+  /** Open the customize panel when this package is preselected from a guide card. */
+  preferCustomOpen?: boolean
 }) {
   const [customOpen, setCustomOpen] = useState(false)
   const [openEnhCustomizeIds, setOpenEnhCustomizeIds] = useState<Set<string>>(() => new Set())
@@ -175,6 +268,12 @@ function CatalogOption({
     if (togglableLines.length === 0) setCustomOpen(false)
   }, [togglableLines.length])
 
+  useEffect(() => {
+    if (selected && preferCustomOpen && togglableLines.length > 0) {
+      setCustomOpen(true)
+    }
+  }, [selected, preferCustomOpen, togglableLines.length])
+
   const optionalAdds = item.optionalAddOns ?? []
   const hasOptionalAdds = optionalAdds.length > 0
   const optionalApprox = selected
@@ -190,7 +289,7 @@ function CatalogOption({
       showCoverageHourDeduction)
 
   return (
-    <li>
+    <li id={`package-card-${item.id}`}>
       <div
         className={`rounded-xl border transition-all duration-300 ${
           selected
@@ -979,6 +1078,8 @@ export default function TestingPackageBuilder({
   const [notes, setNotes] = useState('')
   const [showFaqs, setShowFaqs] = useState(false)
   const notesRef = useRef<HTMLTextAreaElement>(null)
+  /** Guide card deep-link: open customize on this catalog id. */
+  const [guideCustomizePackageId, setGuideCustomizePackageId] = useState<string | null>(null)
 
   const [photoSelected, setPhotoSelected] = useState<Set<string>>(new Set())
   const [videoSelected, setVideoSelected] = useState<Set<string>>(new Set())
@@ -1083,6 +1184,14 @@ export default function TestingPackageBuilder({
   const photoFilmBundleIdSet = useMemo(
     () => new Set(photoFilmBundleOffers.map((i) => i.id)),
     [photoFilmBundleOffers]
+  )
+  const photoCatalogIds = useMemo(
+    () => new Set(photoCatalog.map((i) => i.id)),
+    [photoCatalog]
+  )
+  const videoCatalogIds = useMemo(
+    () => new Set(videoCatalog.map((i) => i.id)),
+    [videoCatalog]
   )
 
   /** Core guide rows — excludes elopement / intimate appendix ids. */
@@ -1643,6 +1752,7 @@ export default function TestingPackageBuilder({
       key={item.id}
       item={item}
       selected={photoSelected.has(item.id)}
+      preferCustomOpen={guideCustomizePackageId === item.id}
       enhancementCatalog={addonCatalog}
       enhancementSectionTitle={addonSectionTitle}
       enhancementSectionSubtitle={addonSectionSubtitle}
@@ -1799,114 +1909,131 @@ export default function TestingPackageBuilder({
         }`}
       >
         <div className="max-w-6xl mx-auto">
+          <Suspense fallback={null}>
+            <GuidePackageUrlSync
+              photoCatalogIds={photoCatalogIds}
+              photoFilmBundleIdSet={photoFilmBundleIdSet}
+              videoCatalogIds={videoCatalogIds}
+              setPhotoSelected={setPhotoSelected}
+              setVideoSelected={setVideoSelected}
+              setPhotoBrowseAllTiers={setPhotoBrowseAllTiers}
+              setVideoBrowseAllTiers={setVideoBrowseAllTiers}
+              setPhotoFilmBrowseAllBundles={setPhotoFilmBrowseAllBundles}
+              setGuideCustomizePackageId={setGuideCustomizePackageId}
+              setEventType={setEventType}
+            />
+          </Suspense>
           <form onSubmit={handleSubmit}>
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-sm rounded-2xl border border-white/10 p-8 md:p-10 shadow-2xl mb-10"
-            >
-              <div className="flex items-center gap-3 mb-8">
-                <User className="w-6 h-6 text-accent shrink-0" />
-                <h2 className="text-2xl font-serif text-white">Your info</h2>
-              </div>
+            {/* Standalone builder keeps contact up top; Investment Guide collects it at submit. */}
+            {!embedMode ? (
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-sm rounded-2xl border border-white/10 p-8 md:p-10 shadow-2xl mb-10"
+              >
+                <div className="flex items-center gap-3 mb-8">
+                  <User className="w-6 h-6 text-accent shrink-0" />
+                  <h2 className="text-2xl font-serif text-white">Your info</h2>
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm text-white/60 mb-2">Full name *</label>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-accent"
-                    placeholder="Your name"
-                    required
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm text-white/60 mb-2">Full name *</label>
+                    <input
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-accent"
+                      placeholder="Your name"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-white/60 mb-2">
+                      Partner&apos;s name (optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={partnerName}
+                      onChange={(e) => setPartnerName(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-accent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-white/60 mb-2">Email *</label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-accent"
+                      placeholder="name@example.com"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-white/60 mb-2">Phone</label>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-accent"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm text-white/60 mb-2">
-                    Partner&apos;s name (optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={partnerName}
-                    onChange={(e) => setPartnerName(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-accent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-white/60 mb-2">Email *</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-accent"
-                    placeholder="name@example.com"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-white/60 mb-2">Phone</label>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-accent"
-                  />
-                </div>
-              </div>
 
-              <div className="mt-8">
-                <label className="block text-sm text-white/60 mb-4">Event type *</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {EVENT_OPTIONS.map((opt) => {
-                    const isSelected = eventType === opt.value
-                    return (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => setEventType(opt.value)}
-                        className={`px-4 py-3 rounded-xl border text-center text-sm transition-all duration-300 ${
-                          isSelected
-                            ? 'bg-accent/20 border-accent text-white'
-                            : 'bg-white/5 border-white/10 text-white/60 hover:border-white/30'
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    )
-                  })}
+                <div className="mt-8">
+                  <label className="block text-sm text-white/60 mb-4">Event type *</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {EVENT_OPTIONS.map((opt) => {
+                      const isSelected = eventType === opt.value
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setEventType(opt.value)}
+                          className={`px-4 py-3 rounded-xl border text-center text-sm transition-all duration-300 ${
+                            isSelected
+                              ? 'bg-accent/20 border-accent text-white'
+                              : 'bg-white/5 border-white/10 text-white/60 hover:border-white/30'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-                <div>
-                  <label className="flex items-center gap-2 text-sm text-white/60 mb-2">
-                    <Calendar className="w-4 h-4 text-accent" />
-                    Event date
-                  </label>
-                  <input
-                    type="date"
-                    value={eventDate}
-                    onChange={(e) => setEventDate(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-accent"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                  <div>
+                    <label className="flex items-center gap-2 text-sm text-white/60 mb-2">
+                      <Calendar className="w-4 h-4 text-accent" />
+                      Event date
+                    </label>
+                    <input
+                      type="date"
+                      value={eventDate}
+                      onChange={(e) => setEventDate(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-accent"
+                    />
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-2 text-sm text-white/60 mb-2">
+                      <MapPin className="w-4 h-4 text-accent" />
+                      Location
+                    </label>
+                    <input
+                      type="text"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-accent"
+                      placeholder="City or venue"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="flex items-center gap-2 text-sm text-white/60 mb-2">
-                    <MapPin className="w-4 h-4 text-accent" />
-                    Location
-                  </label>
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-accent"
-                    placeholder="City or venue"
-                  />
-                </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            ) : null}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 mb-10">
               <motion.section
@@ -2633,7 +2760,114 @@ export default function TestingPackageBuilder({
               transition={{ delay: 0.25 }}
               className="bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-sm rounded-2xl border border-white/10 p-8 md:p-10 shadow-2xl"
             >
-              <h2 className="text-xl font-serif text-white mb-6">Review & notes</h2>
+              <h2 className="text-xl font-serif text-white mb-6">
+                {embedMode ? 'Send your package' : 'Review & notes'}
+              </h2>
+
+              {embedMode ? (
+                <div className="mb-10 pb-10 border-b border-white/10">
+                  <div className="flex items-center gap-3 mb-6">
+                    <User className="w-5 h-5 text-accent shrink-0" />
+                    <h3 className="text-lg font-serif text-white">How can we reach you?</h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm text-white/60 mb-2">Full name *</label>
+                      <input
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-accent"
+                        placeholder="Your name"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-white/60 mb-2">
+                        Partner&apos;s name (optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={partnerName}
+                        onChange={(e) => setPartnerName(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-accent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-white/60 mb-2">Email *</label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-accent"
+                        placeholder="name@example.com"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-white/60 mb-2">Phone</label>
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-accent"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-8">
+                    <label className="block text-sm text-white/60 mb-4">Event type *</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      {EVENT_OPTIONS.map((opt) => {
+                        const isSelected = eventType === opt.value
+                        return (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => setEventType(opt.value)}
+                            className={`px-4 py-3 rounded-xl border text-center text-sm transition-all duration-300 ${
+                              isSelected
+                                ? 'bg-accent/20 border-accent text-white'
+                                : 'bg-white/5 border-white/10 text-white/60 hover:border-white/30'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                    <div>
+                      <label className="flex items-center gap-2 text-sm text-white/60 mb-2">
+                        <Calendar className="w-4 h-4 text-accent" />
+                        Event date
+                      </label>
+                      <input
+                        type="date"
+                        value={eventDate}
+                        onChange={(e) => setEventDate(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-accent"
+                      />
+                    </div>
+                    <div>
+                      <label className="flex items-center gap-2 text-sm text-white/60 mb-2">
+                        <MapPin className="w-4 h-4 text-accent" />
+                        Location
+                      </label>
+                      <input
+                        type="text"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-accent"
+                        placeholder="City or venue"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : null}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                 <div>
@@ -3100,14 +3334,14 @@ export default function TestingPackageBuilder({
                 <p className="text-sm text-white/45">
                   {!canSubmit && (
                     <span>
-                      Add your details, pick an event type, and choose at least one photography or
-                      cinematography package—or optional tier upgrades, enhancements from the
-                      dropdown, or extras in the sections above.
+                      {embedMode
+                        ? 'Select a collection above (or in the columns), add your contact details, and pick an event type to send.'
+                        : 'Add your details, pick an event type, and choose at least one photography or cinematography package—or optional tier upgrades, enhancements from the dropdown, or extras in the sections above.'}
                     </span>
                   )}
                   {canSubmit && (
                     <span>
-                      Ready to send—your selections go to our team the same way as our contact form.
+                      Ready to send—your package details go to our team via the CRM inbox.
                     </span>
                   )}
                 </p>

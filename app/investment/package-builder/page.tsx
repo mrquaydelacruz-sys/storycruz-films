@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import InvestmentGuidePage from '@/components/investment-guide/InvestmentGuidePage'
 import TestingPackageBuilder from '@/components/TestingPackageBuilder'
 import { getInvestmentGuideBuilderProps } from '@/lib/investment-guide-data'
@@ -30,11 +31,19 @@ export default async function InvestmentPackageBuilderPage() {
     <InvestmentGuidePage
       heroVideoSrc={heroVideoSrc}
       builder={
-        <TestingPackageBuilder
-          {...content}
-          embedMode
-          submissionSlug="investment/package-builder"
-        />
+        <Suspense
+          fallback={
+            <div className="bg-[#141210] text-white/50 px-6 py-16 text-center text-sm">
+              Loading package builder…
+            </div>
+          }
+        >
+          <TestingPackageBuilder
+            {...content}
+            embedMode
+            submissionSlug="investment/package-builder"
+          />
+        </Suspense>
       }
     />
   )
