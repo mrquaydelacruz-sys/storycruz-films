@@ -2,43 +2,34 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
+import WhitePhotoFrame from '@/components/WhitePhotoFrame'
 
-// Helper to extract YouTube ID from any URL format
 function getYouTubeId(url: string) {
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
   const match = url?.match(regExp)
   return match && match[2].length === 11 ? match[2] : null
 }
 
+const easeOut = [0.22, 1, 0.36, 1] as const
+
 const container = {
   hidden: { opacity: 0 },
-  visible: (i = 1) => ({
-    opacity: 1,
-    transition: { staggerChildren: 0.12, delayChildren: 0.08 },
-  }),
-}
-
-const popIn = {
-  hidden: { opacity: 0, scale: 0.82, y: 24 },
   visible: {
     opacity: 1,
-    scale: 1,
-    y: 0,
-    transition: {
-      type: 'spring' as const,
-      stiffness: 260,
-      damping: 20,
-    },
+    transition: { staggerChildren: 0.08, delayChildren: 0.05 },
   },
 }
 
-const titleReveal = {
+const fadeUp = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { type: 'spring' as const, stiffness: 200, damping: 24 },
+    transition: {
+      duration: 0.5,
+      ease: easeOut,
+    },
   },
 }
 
@@ -50,67 +41,82 @@ export default function FeaturedFilms({
   forceVisible?: boolean
 }) {
   const [playingFilm, setPlayingFilm] = useState<string | null>(null)
+  const reducedMotion = useReducedMotion()
 
   if (!films || films.length === 0) return null
 
+  const motionProps = reducedMotion
+    ? {}
+    : {
+        initial: forceVisible ? ('visible' as const) : ('hidden' as const),
+        animate: forceVisible ? ('visible' as const) : undefined,
+        whileInView: forceVisible ? undefined : ('visible' as const),
+        viewport: forceVisible
+          ? undefined
+          : { once: true, amount: 0.15, margin: '0px 0px -40px 0px' },
+        variants: container,
+      }
+
   return (
     <motion.section
-      className="relative z-10 py-24 px-6 md:px-12 max-w-7xl mx-auto"
-      initial={forceVisible ? 'visible' : 'hidden'}
-      animate={forceVisible ? 'visible' : undefined}
-      whileInView={forceVisible ? undefined : 'visible'}
-      viewport={forceVisible ? undefined : { once: true, amount: 0.55, margin: '80px 0px 0px 0px' }}
-      variants={container}
+      className="relative z-10 mx-auto max-w-7xl px-6 py-24 md:px-12"
+      {...motionProps}
     >
       <motion.div
-        className="flex flex-col items-center text-center mb-16"
-        variants={titleReveal}
+        className="mb-16 flex flex-col items-center text-center"
+        variants={reducedMotion ? undefined : fadeUp}
       >
-        <motion.h2
-          className="text-3xl md:text-5xl font-serif text-white mb-6"
-          variants={titleReveal}
-        >
+        <h2 className="mb-6 font-serif text-3xl text-white md:text-5xl">
           Featured Films
-        </motion.h2>
-        <motion.div className="h-[1px] w-20 bg-accent/50" variants={titleReveal} />
+        </h2>
+        <div className="h-px w-20 bg-accent/50" />
       </motion.div>
 
-      <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-10" variants={container}>
+      <motion.div
+        className="grid grid-cols-1 gap-10 md:grid-cols-2"
+        variants={reducedMotion ? undefined : container}
+      >
         {films.map((film) => {
           const videoId = getYouTubeId(film.youtubeUrl)
           if (!film.slug?.current) return null
 
           return (
-            <motion.div key={film.slug.current} className="group relative" variants={popIn}>
+            <motion.div
+              key={film.slug.current}
+              className="group relative"
+              variants={reducedMotion ? undefined : fadeUp}
+            >
               <button
+                type="button"
                 onClick={() => videoId && setPlayingFilm(videoId)}
-                className="w-full relative aspect-video bg-neutral-900/40 border border-white/10 overflow-hidden mb-6 cursor-pointer block backdrop-blur-sm"
+                className="mb-6 block w-full cursor-pointer text-left"
               >
-                {/* 1. YOUTUBE THUMBNAIL LOGIC */}
-                {videoId ? (
-                  <Image
-                    src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`}
-                    alt={film.title}
-                    fill
-                    loading="lazy"
-                    unoptimized
-                    className="object-cover opacity-80 group-hover:opacity-60 group-hover:scale-105 transition-all duration-700"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-neutral-800 text-white/20">
-                    No Video Link
-                  </div>
-                )}
+                <WhitePhotoFrame contentClassName="aspect-video">
+                  {videoId ? (
+                    <Image
+                      src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`}
+                      alt={film.title}
+                      fill
+                      loading="lazy"
+                      unoptimized
+                      className="object-cover opacity-80 transition-all duration-700 group-hover:scale-105 group-hover:opacity-60"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-neutral-800 text-white/20">
+                      No Video Link
+                    </div>
+                  )}
 
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-full border border-white/30 flex items-center justify-center backdrop-blur-sm group-hover:scale-110 group-hover:bg-white/10 transition-all duration-300">
-                    <div className="w-0 h-0 border-t-[10px] border-t-transparent border-l-[18px] border-l-white border-b-[10px] border-b-transparent ml-1"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/30 transition-all duration-300 group-hover:scale-110 group-hover:bg-white/10">
+                      <div className="ml-1 h-0 w-0 border-y-[10px] border-y-transparent border-l-[18px] border-l-white" />
+                    </div>
                   </div>
-                </div>
+                </WhitePhotoFrame>
               </button>
 
               <div className="text-center">
-                <h3 className="text-xl font-serif text-white group-hover:text-accent transition-colors">
+                <h3 className="font-serif text-xl text-white transition-colors group-hover:text-accent">
                   {film.title}
                 </h3>
               </div>
@@ -120,16 +126,12 @@ export default function FeaturedFilms({
       </motion.div>
 
       <motion.div
-        className="flex justify-center mt-16"
-        initial={forceVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
-        animate={forceVisible ? { opacity: 1, y: 0 } : undefined}
-        whileInView={forceVisible ? undefined : { opacity: 1, y: 0 }}
-        viewport={forceVisible ? undefined : { once: true, amount: 0.3 }}
-        transition={{ type: 'spring' as const, stiffness: 200, damping: 24, delay: 0.2 }}
+        className="mt-16 flex justify-center"
+        variants={reducedMotion ? undefined : fadeUp}
       >
         <Link
           href="/films"
-          className="px-8 py-3 border border-white/20 text-sm uppercase tracking-widest text-white hover:bg-white hover:text-black transition-all duration-300"
+          className="border border-white/20 px-8 py-3 text-sm uppercase tracking-widest text-white transition-all duration-300 hover:bg-white hover:text-black"
         >
           See All Films
         </Link>
@@ -137,13 +139,13 @@ export default function FeaturedFilms({
 
       {playingFilm && (
         <div
-          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 md:p-12 backdrop-blur-md"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 md:p-12"
           onClick={() => setPlayingFilm(null)}
         >
-          <button className="absolute top-6 right-6 text-white/50 hover:text-white text-4xl font-light">
+          <button className="absolute top-6 right-6 text-4xl font-light text-white/50 hover:text-white">
             &times;
           </button>
-          <div className="w-full max-w-6xl aspect-video relative bg-black shadow-2xl border border-white/10">
+          <div className="relative aspect-video w-full max-w-6xl border border-white/10 bg-black shadow-2xl">
             <iframe
               width="100%"
               height="100%"
@@ -152,7 +154,7 @@ export default function FeaturedFilms({
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
-            ></iframe>
+            />
           </div>
         </div>
       )}

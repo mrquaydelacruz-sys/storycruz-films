@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -13,36 +13,65 @@ const links = [
   { name: 'Inquire', href: '/inquire' },
 ];
 
+const SCROLL_THRESHOLD = 8;
+
 export default function Navbar({ logoUrl }: { logoUrl?: string }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const lastY = useRef(0);
+  const ticking = useRef(false);
 
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    setIsOpen(false);
+    setIsVisible(true);
+    lastY.current = typeof window !== 'undefined' ? window.scrollY : 0;
+  }, [pathname]);
 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       document.body.classList.add('menu-open');
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
       document.body.classList.remove('menu-open');
     }
+
+    return () => {
+      document.body.style.overflow = '';
+      document.body.classList.remove('menu-open');
+    };
   }, [isOpen]);
 
-  // Listen for custom toggle event from scenes (like VisionScene)
   useEffect(() => {
-    const handleToggle = (e: CustomEvent) => {
-      if (typeof e.detail?.visible === 'boolean') {
-        setIsVisible(e.detail.visible);
-      }
+    const onScroll = () => {
+      if (ticking.current) return;
+      ticking.current = true;
+
+      requestAnimationFrame(() => {
+        const y = window.scrollY;
+        const delta = y - lastY.current;
+
+        if (isOpen || y < SCROLL_THRESHOLD) {
+          setIsVisible(true);
+        } else if (delta > SCROLL_THRESHOLD) {
+          setIsVisible(false);
+        } else if (delta < -SCROLL_THRESHOLD) {
+          setIsVisible(true);
+        }
+
+        lastY.current = y;
+        ticking.current = false;
+      });
     };
-    window.addEventListener('storycruz-toggle-nav' as any, handleToggle as any);
-    return () => {
-      window.removeEventListener('storycruz-toggle-nav' as any, handleToggle as any);
-    };
-  }, []);
+
+    lastY.current = window.scrollY;
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [isOpen]);
 
   return (
     <nav
@@ -101,7 +130,7 @@ export default function Navbar({ logoUrl }: { logoUrl?: string }) {
         </button>
       </div>
 
-      {/* 2. MOBILE MENU OVERLAY — portaled to body so it always covers full screen (e.g. over /vision Canvas) */}
+      {/* 2. MOBILE MENU OVERLAY — portaled to body so it always covers full screen */}
       {mounted &&
         createPortal(
           <div
