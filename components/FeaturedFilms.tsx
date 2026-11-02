@@ -142,7 +142,7 @@ export default function FeaturedFilms({
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 md:p-12"
           onClick={() => setPlayingFilm(null)}
         >
-          <button className="absolute top-6 right-6 text-4xl font-light text-white/50 hover:text-white">
+          <button type="button" aria-label="Close video" className="absolute top-6 right-6 text-4xl font-light text-white/50 hover:text-white">
             &times;
           </button>
           <div className="relative aspect-video w-full max-w-6xl border border-white/10 bg-black shadow-2xl">

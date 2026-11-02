@@ -1,6 +1,13 @@
 import { client } from "@/sanity/client";
 import BackgroundWater from "@/components/BackgroundWater";
 import ContactSection from "@/components/ContactSection";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Wedding Films",
+  description: "Watch cinematic wedding films from StoryCruz Films, capturing real, unscripted moments.",
+  alternates: { canonical: "/films" },
+};
 
 // Helper to extract Video ID
 const getYouTubeId = (url: string) => {

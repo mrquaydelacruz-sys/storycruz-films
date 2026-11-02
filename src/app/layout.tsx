@@ -19,9 +19,46 @@ const sans = Poppins({
   display: "swap",
 });
 
+const siteUrl = "https://www.storycruzfilms.com";
+const siteDescription =
+  "StoryCruz Films creates cinematic wedding films and photography that capture the unscripted moments of your day.";
+
 export const metadata: Metadata = {
-  title: "StoryCruz Films",
-  description: "Wedding Films & Photography",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "StoryCruz Films | Wedding Films & Photography",
+    template: "%s | StoryCruz Films",
+  },
+  description: siteDescription,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "StoryCruz Films",
+    title: "StoryCruz Films | Wedding Films & Photography",
+    description: siteDescription,
+    url: siteUrl,
+    images: [{ url: "/logo.png", alt: "StoryCruz Films" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "StoryCruz Films | Wedding Films & Photography",
+    description: siteDescription,
+    images: ["/logo.png"],
+  },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  name: "StoryCruz Films",
+  url: siteUrl,
+  description: siteDescription,
+  image: `${siteUrl}/logo.png`,
+  sameAs: [
+    "https://www.facebook.com/storycruzfilms",
+    "https://www.instagram.com/storycruzfilms/",
+    "https://www.youtube.com/@storycruzfilms",
+  ],
 };
 
 export default async function RootLayout({
@@ -36,6 +73,10 @@ export default async function RootLayout({
       <body
         className={`${serif.variable} ${sans.variable} antialiased`}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <SiteChrome chrome={chrome}>{children}</SiteChrome>
       </body>
     </html>

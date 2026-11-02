@@ -61,7 +61,7 @@ export default function AutoImageSlideshow({
               type="button"
               aria-label={`Show photo ${i + 1}`}
               onClick={() => setIndex(i)}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
+              className={`relative h-1.5 rounded-full transition-all duration-300 after:absolute after:-inset-2 after:content-[''] ${
                 i === index ? 'w-6 bg-white' : 'w-1.5 bg-white/40 hover:bg-white/70'
               }`}
             />

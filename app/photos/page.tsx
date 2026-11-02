@@ -3,6 +3,13 @@ import Image from "next/image";
 import Link from "next/link";
 import HeaderCarousel from "@/components/HeaderCarousel";
 import ContactSection from "@/components/ContactSection";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Wedding Photography",
+  description: "Browse wedding photography galleries by StoryCruz Films.",
+  alternates: { canonical: "/photos" },
+};
 
 async function getData() {
   // We use Promise.all to fetch both data sources at the same time (faster)

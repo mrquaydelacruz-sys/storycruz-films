@@ -3,6 +3,13 @@ import { client, urlFor } from "@/sanity/client";
 import Image from "next/image";
 import AboutSlideshow from "@/components/AboutSlideshow";
 import SignatureAnimation from "@/components/SignatureAnimation";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "About",
+  description: "Meet the team behind StoryCruz Films and the story-first approach we bring to every wedding.",
+  alternates: { canonical: "/about" },
+};
 
 async function getData() {
   return await client.fetch(`*[_type == "siteContent"][0]{

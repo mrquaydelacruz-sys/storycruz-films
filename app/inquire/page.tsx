@@ -1,6 +1,13 @@
 import { client } from "@/sanity/client";
 import ContactForm from "@/components/ContactForm";
 import BackgroundVideo from "@/components/BackgroundVideo";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Inquire",
+  description: "Check availability and inquire about wedding film and photography with StoryCruz Films.",
+  alternates: { canonical: "/inquire" },
+};
 
 export const revalidate = 60;
 
