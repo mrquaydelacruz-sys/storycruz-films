@@ -1,21 +1,18 @@
 'use client'
 
 import { useMemo } from 'react'
-import Footer from '@/components/Footer'
 import FeaturedFilms from '@/components/FeaturedFilms'
 import ContactSection from '@/components/ContactSection'
 import HomeHero from '@/components/home/HomeHero'
 import PhotoTrio from '@/components/home/PhotoTrio'
 import HomeTestimonials from '@/components/home/HomeTestimonials'
 import type { VisionData } from '@/app/vision/types'
-import type { SiteChromeData } from '@/lib/site-chrome'
 
 type Props = {
   data: VisionData
-  chrome: SiteChromeData
 }
 
-export default function HomePage({ data, chrome }: Props) {
+export default function HomePage({ data }: Props) {
   const centerUrls = useMemo(() => {
     const slideshow =
       data.introSlideshowUrls && data.introSlideshowUrls.length > 0
@@ -42,7 +39,6 @@ export default function HomePage({ data, chrome }: Props) {
       )}
 
       <ContactSection />
-      <Footer data={chrome} />
     </main>
   )
 }

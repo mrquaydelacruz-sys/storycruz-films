@@ -35,11 +35,6 @@ export async function getSiteChromeData(): Promise<SiteChromeData> {
   }
 }
 
-/** Routes that render their own footer inside the vision experience. */
-export function routeUsesEmbeddedFooter(pathname: string): boolean {
-  return pathname === '/' || pathname === '/vision'
-}
-
 /** QR / link landing — self-contained page without site chrome. */
 export function routeIsConnectLanding(pathname: string): boolean {
   return pathname === '/connect' || pathname === '/qr'
