@@ -3,35 +3,56 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import s from '../preview.module.css'
+import s from '../site.module.css'
+import type { ShellRoutes } from '../routes'
+import type { SiteChromeData } from '@/lib/site-chrome'
 
-type NavItem = { label: string; href: string; exact?: boolean; match?: string[] }
+const PLATFORM_LABELS: Record<string, string> = { youtube: 'YouTube', tiktok: 'TikTok', instagram: 'Instagram', facebook: 'Facebook', twitter: 'Twitter', vimeo: 'Vimeo', email: 'Email' }
 
-const WORK_SECTIONS = ['/preview/photography', '/preview/films']
+type NavItem = { label: string; href: string; kind: 'home' | 'work' | 'page' }
 
-const NAV: NavItem[] = [
-  { label: 'Home', href: '/preview', exact: true },
-  // One "Our Work" item; Photography / Films are switched via the tabs inside the section.
-  { label: 'Our Work', href: '/preview/photography', match: WORK_SECTIONS },
-  { label: 'Our Story', href: '/preview/our-story' },
-  { label: 'Experience', href: '/preview/experience' },
-  { label: 'Inquire', href: '/preview/inquire' },
-]
-
-export default function PreviewShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname() ?? '/preview'
+export default function SiteShell({
+  children,
+  routes,
+  chrome,
+}: {
+  children: React.ReactNode
+  routes: ShellRoutes
+  /** Real contact/social data (public site only). */
+  chrome?: SiteChromeData
+}) {
+  const isPreview = routes.mode === 'preview'
+  const pathname = usePathname() ?? routes.home
+  const NAV: NavItem[] = [
+    { label: 'Home', href: routes.home, kind: 'home' },
+    // One "Our Work" item; Photography / Films are switched via the tabs inside the section.
+    { label: 'Our Work', href: routes.photos, kind: 'work' },
+    { label: 'Our Story', href: routes.story, kind: 'page' },
+    { label: 'Experience', href: routes.experience, kind: 'page' },
+    { label: 'Inquire', href: routes.inquire, kind: 'page' },
+  ]
   // Menu is "open" only for the route it was opened on, so any navigation closes it.
   const [openPath, setOpenPath] = useState<string | null>(null)
   const open = openPath === pathname
   const setOpen = (v: boolean) => setOpenPath(v ? pathname : null)
+
+  const under = (base: string) => pathname === base || pathname.startsWith(base + '/')
+  const isActive = (n: NavItem) =>
+    n.kind === 'home' ? pathname === n.href : n.kind === 'work' ? under(routes.photos) || under(routes.films) : under(n.href)
+  // Clicking "Our Work" while inside Films keeps you in Films rather than bouncing to Photography.
+  const hrefFor = (n: NavItem) => (n.kind === 'work' && under(routes.films) ? routes.films : n.href)
   const menuBtn = useRef<HTMLButtonElement>(null)
   const closeBtn = useRef<HTMLButtonElement>(null)
   const panel = useRef<HTMLDivElement>(null)
 
-  const under = (base: string) => pathname === base || pathname.startsWith(base + '/')
-  const isActive = (n: NavItem) => (n.match ? n.match.some(under) : n.exact ? pathname === n.href : under(n.href))
-  // Clicking "Our Work" while inside Films keeps you in Films rather than bouncing to Photography.
-  const hrefFor = (n: NavItem) => (n.match && under('/preview/films') ? '/preview/films' : n.href)
+  // Match the page canvas to the shell (overscroll/bounce area); restored when leaving the shell.
+  useEffect(() => {
+    const prev = document.body.style.backgroundColor
+    document.body.style.backgroundColor = '#f6f1e7'
+    return () => {
+      document.body.style.backgroundColor = prev
+    }
+  }, [])
 
   // Scroll lock, Escape to close, focus handling and a simple focus trap while open.
   useEffect(() => {
@@ -71,14 +92,16 @@ export default function PreviewShell({ children }: { children: React.ReactNode }
       <a href="#scp-main" className={s.skip}>
         Skip to content
       </a>
-      <div className={s.banner} role="note">
-        <strong>Design preview</strong>
-        Not the live site — a clickable redesign concept. Nothing here is sent or saved.
-      </div>
+      {isPreview && (
+        <div className={s.banner} role="note">
+          <strong>Design preview</strong>
+          Not the live site — a clickable redesign concept. Nothing here is sent or saved.
+        </div>
+      )}
 
       <header className={s.header}>
         <div className={s.headerInner}>
-          <Link href="/preview" className={s.logo} aria-label="Story Cruz Films — preview home">
+          <Link href={routes.home} className={s.logo} aria-label={isPreview ? 'Story Cruz Films — preview home' : 'Story Cruz Films — home'}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="" width={54} height={54} />
             <span className={s.logoWord}>Story Cruz Films</span>
@@ -138,7 +161,7 @@ export default function PreviewShell({ children }: { children: React.ReactNode }
             </Link>
           ))}
         </nav>
-        <p className={s.mobileNote}>Design preview — not the live site.</p>
+        {isPreview && <p className={s.mobileNote}>Design preview — not the live site.</p>}
       </div>
 
       <main id="scp-main" tabIndex={-1} style={{ outline: 'none' }}>
@@ -164,17 +187,40 @@ export default function PreviewShell({ children }: { children: React.ReactNode }
                 ))}
               </ul>
             </div>
-            <div>
-              <h2>Preview</h2>
-              <ul>
-                <li>
-                  <Link href="/preview">Preview home</Link>
-                </li>
-              </ul>
-            </div>
+            {isPreview ? (
+              <div>
+                <h2>Preview</h2>
+                <ul>
+                  <li>
+                    <Link href={routes.home}>Preview home</Link>
+                  </li>
+                </ul>
+              </div>
+            ) : (
+              <div>
+                <h2>Connect</h2>
+                <ul>
+                  {chrome?.email && (
+                    <li>
+                      <a href={`mailto:${chrome.email}`}>{chrome.email}</a>
+                    </li>
+                  )}
+                  {chrome?.location && <li className={s.muted}>{chrome.location}</li>}
+                  {(chrome?.socialLinks ?? []).map((l) => (
+                    <li key={l.url}>
+                      <a href={l.url} target="_blank" rel="noopener noreferrer">
+                        {PLATFORM_LABELS[l.platform.toLowerCase()] ?? l.platform.charAt(0).toUpperCase() + l.platform.slice(1)}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
           <p className={s.footNote}>
-            Design preview for internal review. Not indexed, not connected to the live inquiry flow or CRM.
+            {isPreview
+              ? 'Design preview for internal review. Not indexed, not connected to the live inquiry flow or CRM.'
+              : chrome?.copyrightText}
           </p>
         </div>
       </footer>

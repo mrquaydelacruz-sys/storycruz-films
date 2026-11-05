@@ -1,4 +1,4 @@
-import s from '../preview.module.css'
+import s from '../site.module.css'
 
 /**
  * PREVIEW ONLY — purely decorative layers.

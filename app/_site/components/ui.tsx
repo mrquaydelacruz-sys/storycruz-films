@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import s from '../preview.module.css'
-import type { Album, Film } from '../_lib/data'
-import { formatDate } from '../_lib/data'
+import s from '../site.module.css'
+import type { Album, Film } from '../data'
+import { formatDate } from '../data'
+import type { SiteRoutes } from '../routes'
 
 export function Crumbs({ items }: { items: { label: string; href?: string }[] }) {
   return (
@@ -39,10 +40,10 @@ export function Photo({ src, alt, sizes, priority }: { src: string | null; alt: 
   return <Image src={src} alt={alt} fill sizes={sizes} priority={priority} />
 }
 
-export function AlbumCard({ album }: { album: Album }) {
+export function AlbumCard({ album, routes }: { album: Album; routes: SiteRoutes }) {
   const d = formatDate(album.date)
   return (
-    <Link href={`/preview/photography/${album.slug}`} className={s.card}>
+    <Link href={routes.photo(album.slug)} className={s.card}>
       <div className={`${s.frame} ${s.zoom}`}>
         <Photo src={album.coverUrl} alt={`Cover photo: ${album.couple}`} sizes="(max-width: 48rem) 100vw, 33vw" />
       </div>
@@ -52,10 +53,10 @@ export function AlbumCard({ album }: { album: Album }) {
   )
 }
 
-export function FilmCard({ film }: { film: Film }) {
+export function FilmCard({ film, routes }: { film: Film; routes: SiteRoutes }) {
   const d = formatDate(film.publishedAt)
   return (
-    <Link href={`/preview/films/${film.slug}`} className={`${s.card} ${s.cardFilm}`}>
+    <Link href={routes.film(film.slug)} className={`${s.card} ${s.cardFilm}`}>
       <div className={`${s.frame} ${s.zoom}`}>
         <Photo src={film.thumbUrl} alt={`Film still: ${film.couple}`} sizes="(max-width: 48rem) 100vw, 33vw" />
         <span className={s.playBadge} aria-hidden="true"><PlayIcon /></span>
@@ -67,11 +68,11 @@ export function FilmCard({ film }: { film: Film }) {
 }
 
 /** The single Photography / Films switcher for the Our Work section (rendered once per list page). */
-export function WorkTabs({ current }: { current: 'photography' | 'films' }) {
+export function WorkTabs({ current, routes }: { current: 'photography' | 'films'; routes: SiteRoutes }) {
   return (
     <nav className={s.switch} aria-label="Our Work sections">
-      <Link href="/preview/photography" aria-current={current === 'photography' ? 'page' : undefined}>Photography</Link>
-      <Link href="/preview/films" aria-current={current === 'films' ? 'page' : undefined}>Films</Link>
+      <Link href={routes.photos} aria-current={current === 'photography' ? 'page' : undefined}>Photography</Link>
+      <Link href={routes.films} aria-current={current === 'films' ? 'page' : undefined}>Films</Link>
     </nav>
   )
 }

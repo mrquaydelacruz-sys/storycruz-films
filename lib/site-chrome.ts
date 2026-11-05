@@ -39,3 +39,23 @@ export async function getSiteChromeData(): Promise<SiteChromeData> {
 export function routeIsConnectLanding(pathname: string): boolean {
   return pathname === '/connect' || pathname === '/qr'
 }
+
+/**
+ * Routes that render the redesigned site shell (their own header + footer, supplied by
+ * app/(site)/layout.tsx or app/preview/layout.tsx) instead of the legacy navbar/footer.
+ * Explicit allow-list: every other route (commercial, investment, package, testing, studio, …)
+ * keeps the legacy chrome exactly as before.
+ */
+export function routeUsesSiteShell(pathname: string): boolean {
+  return (
+    pathname === '/' ||
+    pathname === '/about' ||
+    pathname === '/experience' ||
+    pathname === '/inquire' ||
+    pathname === '/photos' ||
+    pathname === '/films' ||
+    /^\/(photos|films)\/[^/]+$/.test(pathname) ||
+    pathname === '/preview' ||
+    pathname.startsWith('/preview/')
+  )
+}

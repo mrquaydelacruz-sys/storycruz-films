@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import s from '../preview.module.css'
+import s from '../site.module.css'
 
 /**
  * Click-to-load player. No third-party embed is requested until the visitor presses play

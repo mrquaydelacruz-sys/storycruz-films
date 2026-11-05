@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { routeIsConnectLanding, type SiteChromeData } from '@/lib/site-chrome'
+import { routeIsConnectLanding, routeUsesSiteShell, type SiteChromeData } from '@/lib/site-chrome'
 
 type Props = {
   children: React.ReactNode
@@ -15,7 +15,7 @@ export default function SiteChrome({ children, chrome }: Props) {
   const isStudio = pathname.startsWith('/studio')
   const isConnectLanding = routeIsConnectLanding(pathname)
 
-  if (isStudio || isConnectLanding) {
+  if (isStudio || isConnectLanding || routeUsesSiteShell(pathname)) {
     return <>{children}</>
   }
 

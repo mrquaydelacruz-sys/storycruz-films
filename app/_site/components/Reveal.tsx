@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import s from '../preview.module.css'
+import s from '../site.module.css'
 
 /** Gentle fade/rise on scroll. Content is visible by default (no JS / reduced motion / already in view). */
 export default function Reveal({

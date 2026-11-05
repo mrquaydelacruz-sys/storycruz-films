@@ -6,9 +6,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- loosely-typed CMS rows */
 import { client, urlFor } from '@/sanity/client'
 
-const REVALIDATE = { next: { revalidate: 300 } }
-
-export const PREVIEW_BASE = '/preview'
+/** Time-based revalidation plus the same cache tags the existing pages use (webhook-compatible). */
+const rv = (...tags: string[]) => ({ next: { revalidate: 60, tags } })
 
 export type Album = {
   slug: string
@@ -91,7 +90,7 @@ export async function getAlbums(): Promise<Album[]> {
         title, "slug": slug.current, date, coverImage, "count": count(images)
       }`,
       {},
-      REVALIDATE
+      rv('photoGallery')
     )
     return (rows ?? []).map((r: any) => {
       const t = splitTitle(r.title ?? '')
@@ -118,7 +117,7 @@ export async function getAlbum(slug: string): Promise<AlbumDetail | null> {
         images[]{ asset->{ url, metadata{ dimensions } } }
       }`,
       { slug },
-      REVALIDATE
+      rv('photoGallery')
     )
     if (!r) return null
     const t = splitTitle(r.title ?? '')
@@ -162,11 +161,11 @@ function toFilm(r: any): Film {
 export async function getFilms(): Promise<Film[]> {
   try {
     const rows = await client.fetch(
-      `*[_type == "film" && defined(slug.current)] | order(featured desc, publishedAt desc){
+      `*[_type == "film" && defined(slug.current) && defined(youtubeUrl)] | order(featured desc, publishedAt desc){
         title, "slug": slug.current, youtubeUrl, publishedAt, customThumbnail
       }`,
       {},
-      REVALIDATE
+      rv('film')
     )
     return (rows ?? []).map(toFilm)
   } catch {
@@ -181,7 +180,7 @@ export async function getFilm(slug: string): Promise<Film | null> {
         title, "slug": slug.current, youtubeUrl, publishedAt, customThumbnail
       }`,
       { slug },
-      REVALIDATE
+      rv('film')
     )
     return r ? toFilm(r) : null
   } catch {
@@ -198,7 +197,7 @@ export async function getStory(): Promise<StoryData> {
         inquireTitle, inquireText, email, location
       }`,
       {},
-      REVALIDATE
+      rv('siteContent')
     )
   } catch {
     d = null
@@ -223,7 +222,7 @@ export async function getHome(): Promise<HomeData> {
     d = await client.fetch(
       `*[_type == "homepage"][0]{ introSlideshow, introLeftImage, introRightImage, testimonials }`,
       {},
-      REVALIDATE
+      rv('homepage')
     )
   } catch {
     d = null

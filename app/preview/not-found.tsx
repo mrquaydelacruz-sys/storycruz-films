@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import s from './preview.module.css'
+import s from '@/app/_site/site.module.css'
 
 export default function PreviewNotFound() {
   return (

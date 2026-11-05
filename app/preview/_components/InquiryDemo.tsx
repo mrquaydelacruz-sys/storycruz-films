@@ -14,7 +14,7 @@
 
 import { useId, useRef, useState } from 'react'
 import Link from 'next/link'
-import s from '../preview.module.css'
+import s from '@/app/_site/site.module.css'
 
 type Values = {
   names: string

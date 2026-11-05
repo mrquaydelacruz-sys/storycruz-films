@@ -4,7 +4,7 @@ import { client } from "@/sanity/client";
 const siteUrl = "https://www.storycruzfilms.com";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const staticPaths = ["", "/about", "/photos", "/films", "/inquire", "/commercial", "/connect"];
+  const staticPaths = ["", "/about", "/experience", "/photos", "/films", "/inquire", "/commercial", "/connect"];
 
   let albums: { slug: string }[] = [];
   try {

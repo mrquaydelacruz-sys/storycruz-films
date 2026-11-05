@@ -1245,3 +1245,17 @@ textarea.input {
   background: var(--ivory);
   color: var(--charcoal) !important;
 }
+
+/* Public inquiry page: heading above, the existing (dark-themed) form on a charcoal panel. */
+.formStack {
+  display: grid;
+  gap: clamp(2rem, 5vw, 3.5rem);
+  max-width: 62rem;
+}
+.darkPanel {
+  background: var(--charcoal);
+  color: #fff;
+  border-radius: 6px;
+  padding: clamp(0.5rem, 3.4vw, 3rem);
+  overflow: hidden;
+}
