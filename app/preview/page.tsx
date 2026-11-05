@@ -3,7 +3,7 @@ import Link from 'next/link'
 import s from './preview.module.css'
 import Reveal from './_components/Reveal'
 import { Arrow, Photo, PlayIcon } from './_components/ui'
-import { Contour, Edge, Wash } from './_components/Art'
+import { Contour, TornEdge, Wash } from './_components/Art'
 import { getAlbums, getFilms, getHome, getStory, matchPairs, formatDate } from './_lib/data'
 
 export const revalidate = 300
@@ -130,8 +130,8 @@ export default async function PreviewHome() {
       )}
 
       {/* OUR APPROACH — existing approved copy, with a fine-art collage */}
-      <section className={`${s.section} ${s.artSection} ${s.grain} ${pairs.length ? '' : s.band}`} aria-labelledby="scp-approach">
-        {!pairs.length && <Edge fill="band" className={s.edgeTop} />}
+      <section className={`${s.section} ${s.artSection} ${pairs.length ? s.grain : s.band}`} aria-labelledby="scp-approach">
+        {!pairs.length && <TornEdge variant="story" />}
         <div className={s.artLayer} aria-hidden="true">
           <Contour variant="drift" className={s.storyContour} />
         </div>
@@ -188,13 +188,13 @@ export default async function PreviewHome() {
 
       {/* CTA */}
       <section className={`${s.section} ${s.cta} ${s.artSection}`} aria-labelledby="scp-cta">
-        <Edge fill="charcoal" className={s.edgeTop} />
+        <TornEdge variant="closing" />
         <div className={`${s.wrap} ${s.narrow} ${s.above}`}>
           <h2 id="scp-cta" className={s.h2}>Let’s talk about <em>your day.</em></h2>
           <p>We’d love to hear your story.</p>
           <div className={s.btnRow}>
             <Link href="/preview/inquire" className={`${s.btn} ${s.btnLight}`}>Start an inquiry (demo)</Link>
-            <Link href="/preview/experience" className={`${s.btn} ${s.btnLight}`} style={{ background: 'transparent', color: 'var(--ivory)' }}>The experience</Link>
+            <Link href="/preview/experience" className={`${s.btn} ${s.btnOutlineLight}`}>The experience</Link>
           </div>
         </div>
       </section>

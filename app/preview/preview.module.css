@@ -1136,8 +1136,10 @@ textarea.input {
   height: auto;
   aspect-ratio: 820 / 520;
   opacity: 0.26;
-  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 85%);
-  mask-image: linear-gradient(to bottom, #000 0%, transparent 85%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 85%), linear-gradient(to right, #000 55%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 85%), linear-gradient(to right, #000 55%, transparent 100%);
+  mask-composite: intersect;
 }
 .contourDraw path {
   stroke-dasharray: 1;
@@ -1150,24 +1152,29 @@ textarea.input {
   }
 }
 
-/* Undulating section edges */
-.edge {
+/* Torn-paper section edges (static SVG; fills are existing palette tokens) */
+.torn {
   position: absolute;
   left: 0;
+  top: 1px;
   width: 100%;
-  height: clamp(22px, 3.2vw, 40px);
+  height: clamp(34px, 4.6vw, 64px);
+  transform: translateY(-100%);
   pointer-events: none;
   display: block;
   z-index: 0;
+  overflow: hidden;
 }
-.edgeTop {
-  top: 1px;
-  transform: translateY(-100%);
+.tornSand {
+  fill: var(--sand);
 }
-.edgeBand path {
+.tornPaper {
+  fill: var(--paper);
+}
+.tornBand {
   fill: var(--olive-wash);
 }
-.edgeCharcoal path {
+.tornCharcoal {
   fill: var(--charcoal);
 }
 
@@ -1226,4 +1233,15 @@ textarea.input {
 .fadeBottom {
   -webkit-mask-image: linear-gradient(to bottom, #000 80%, transparent 100%);
   mask-image: linear-gradient(to bottom, #000 80%, transparent 100%);
+}
+
+/* Outlined button for dark sections (replaces an inline colour that the btnLight !important rule overrode). */
+.btnOutlineLight {
+  background: transparent;
+  color: var(--ivory) !important;
+  border-color: var(--ivory);
+}
+.btnOutlineLight:hover {
+  background: var(--ivory);
+  color: var(--charcoal) !important;
 }

@@ -42,7 +42,7 @@ export default async function OurStory() {
           <h2 className={s.h2}>Photo, film, <em>or both.</em></h2>
           <div className={s.btnRow}>
             <Link href="/preview/experience" className={`${s.btn} ${s.btnLight}`}>The experience <Arrow /></Link>
-            <Link href="/preview/inquire" className={`${s.btn} ${s.btnLight}`} style={{ background: 'transparent', color: 'var(--ivory)' }}>Inquire (demo)</Link>
+            <Link href="/preview/inquire" className={`${s.btn} ${s.btnOutlineLight}`}>Inquire (demo)</Link>
           </div>
         </div>
       </section>
