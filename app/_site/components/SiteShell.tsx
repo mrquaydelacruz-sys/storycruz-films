@@ -2,14 +2,17 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSelectedLayoutSegments } from 'next/navigation'
 import s from '../site.module.css'
 import type { ShellRoutes } from '../routes'
 import type { SiteChromeData } from '@/lib/site-chrome'
 
 const PLATFORM_LABELS: Record<string, string> = { youtube: 'YouTube', tiktok: 'TikTok', instagram: 'Instagram', facebook: 'Facebook', twitter: 'Twitter', vimeo: 'Vimeo', email: 'Email' }
 
-type NavItem = { label: string; href: string; kind: 'home' | 'work' | 'page' }
+type NavItem = { label: string; href: string; kind: 'home' | 'work' | 'page'; segments: string[] }
+
+// Route-segment names for each nav item, for both the public routes and the /preview sandbox.
+const WORK_SEGMENTS = ['photos', 'photography', 'films']
 
 export default function SiteShell({
   children,
@@ -24,23 +27,25 @@ export default function SiteShell({
   const isPreview = routes.mode === 'preview'
   const pathname = usePathname() ?? routes.home
   const NAV: NavItem[] = [
-    { label: 'Home', href: routes.home, kind: 'home' },
+    { label: 'Home', href: routes.home, kind: 'home', segments: [] },
     // One "Our Work" item; Photography / Films are switched via the tabs inside the section.
-    { label: 'Our Work', href: routes.photos, kind: 'work' },
-    { label: 'Our Story', href: routes.story, kind: 'page' },
-    { label: 'Experience', href: routes.experience, kind: 'page' },
-    { label: 'Inquire', href: routes.inquire, kind: 'page' },
+    { label: 'Our Work', href: routes.photos, kind: 'work', segments: WORK_SEGMENTS },
+    { label: 'Our Story', href: routes.story, kind: 'page', segments: ['about', 'our-story'] },
+    { label: 'Experience', href: routes.experience, kind: 'page', segments: ['experience'] },
+    { label: 'Inquire', href: routes.inquire, kind: 'page', segments: ['inquire'] },
   ]
   // Menu is "open" only for the route it was opened on, so any navigation closes it.
   const [openPath, setOpenPath] = useState<string | null>(null)
   const open = openPath === pathname
   const setOpen = (v: boolean) => setOpenPath(v ? pathname : null)
 
-  const under = (base: string) => pathname === base || pathname.startsWith(base + '/')
-  const isActive = (n: NavItem) =>
-    n.kind === 'home' ? pathname === n.href : n.kind === 'work' ? under(routes.photos) || under(routes.films) : under(n.href)
+  // Active state comes from the route tree (segments below this layout), never from the URL string:
+  // the server-side pathname of the prerendered root route is not reliably "/".
+  const segments = useSelectedLayoutSegments()
+  const first = segments[0] ?? null
+  const isActive = (n: NavItem) => (n.kind === 'home' ? first === null || first === '__PAGE__' : first !== null && n.segments.includes(first))
   // Clicking "Our Work" while inside Films keeps you in Films rather than bouncing to Photography.
-  const hrefFor = (n: NavItem) => (n.kind === 'work' && under(routes.films) ? routes.films : n.href)
+  const hrefFor = (n: NavItem) => (n.kind === 'work' && first === 'films' ? routes.films : n.href)
   const menuBtn = useRef<HTMLButtonElement>(null)
   const closeBtn = useRef<HTMLButtonElement>(null)
   const panel = useRef<HTMLDivElement>(null)

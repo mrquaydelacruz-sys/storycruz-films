@@ -41,21 +41,21 @@ export function routeIsConnectLanding(pathname: string): boolean {
 }
 
 /**
- * Routes that render the redesigned site shell (their own header + footer, supplied by
- * app/(site)/layout.tsx or app/preview/layout.tsx) instead of the legacy navbar/footer.
- * Explicit allow-list: every other route (commercial, investment, package, testing, studio, …)
- * keeps the legacy chrome exactly as before.
+ * Layout selection by ROUTE SEGMENT (from the router's route tree), not by URL pathname.
+ *
+ * The pathname seen during the server render of the prerendered root route is not guaranteed to be "/"
+ * (observed in production: the homepage rendered with the legacy chrome because a pathname allow-list
+ * missed it). Segments come from the route tree itself, so they cannot drift.
+ *
+ *  - "(site)"  → public redesign routes (app/(site)/**, including "/")  → own shell from (site)/layout.tsx
+ *  - "preview" → noindex sandbox (app/preview/**)                       → own shell from preview/layout.tsx
+ *  - "studio" / "connect" / "qr" → no site chrome at all (as before)
+ *  - anything else (commercial, investment, package, testing, vision, global 404, …) → legacy navbar/footer
  */
-export function routeUsesSiteShell(pathname: string): boolean {
-  return (
-    pathname === '/' ||
-    pathname === '/about' ||
-    pathname === '/experience' ||
-    pathname === '/inquire' ||
-    pathname === '/photos' ||
-    pathname === '/films' ||
-    /^\/(photos|films)\/[^/]+$/.test(pathname) ||
-    pathname === '/preview' ||
-    pathname.startsWith('/preview/')
-  )
+export function segmentUsesSiteShell(segment: string | null): boolean {
+  return segment === '(site)' || segment === 'preview'
+}
+
+export function segmentHasNoChrome(segment: string | null): boolean {
+  return segment === 'studio' || segment === 'connect' || segment === 'qr'
 }

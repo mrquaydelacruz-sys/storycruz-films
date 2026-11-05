@@ -1,9 +1,9 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
+import { useSelectedLayoutSegment } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { routeIsConnectLanding, routeUsesSiteShell, type SiteChromeData } from '@/lib/site-chrome'
+import { segmentHasNoChrome, segmentUsesSiteShell, type SiteChromeData } from '@/lib/site-chrome'
 
 type Props = {
   children: React.ReactNode
@@ -11,11 +11,10 @@ type Props = {
 }
 
 export default function SiteChrome({ children, chrome }: Props) {
-  const pathname = usePathname() ?? ''
-  const isStudio = pathname.startsWith('/studio')
-  const isConnectLanding = routeIsConnectLanding(pathname)
+  // Explicit, route-tree-based selection (see lib/site-chrome.ts). No URL/pathname matching.
+  const segment = useSelectedLayoutSegment()
 
-  if (isStudio || isConnectLanding || routeUsesSiteShell(pathname)) {
+  if (segmentHasNoChrome(segment) || segmentUsesSiteShell(segment)) {
     return <>{children}</>
   }
 
