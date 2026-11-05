@@ -1044,3 +1044,186 @@ textarea.input {
     transform: none;
   }
 }
+
+/* =====================================================================
+   FINE-ART LAYER (homepage trial) — decorative only.
+   Palette: existing tokens only (ivory, paper, sand, olive, olive-wash, charcoal).
+   ===================================================================== */
+
+/* Sections that host decoration: stack context so layers sit behind content. */
+.artSection {
+  position: relative;
+  isolation: isolate;
+}
+.above {
+  position: relative;
+  z-index: 1;
+}
+.artLayer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Paper grain — a tiny inline SVG noise tile (~0.5 KB), no image request. */
+.grain::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.14;
+  mix-blend-mode: multiply;
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n' x='0' y='0' width='100%25' height='100%25'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .2  0 0 0 0 .18  0 0 0 0 .14  0 0 0 .5 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 220px 220px;
+}
+
+/* Soft colour washes: radial fades of existing palette colours, no hard edges. */
+.wash {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  width: min(62vw, 46rem);
+  aspect-ratio: 1.15 / 1;
+}
+.washOlive {
+  background: radial-gradient(closest-side, rgba(86, 91, 71, 0.12), rgba(86, 91, 71, 0.05) 55%, rgba(86, 91, 71, 0) 100%);
+}
+.washSand {
+  background: radial-gradient(closest-side, rgba(214, 201, 176, 0.45), rgba(236, 229, 214, 0.2) 55%, rgba(236, 229, 214, 0) 100%);
+}
+.heroWashA {
+  right: -12%;
+  top: -18%;
+}
+.heroWashB {
+  left: -18%;
+  bottom: -30%;
+  width: min(48vw, 34rem);
+}
+
+/* Delicate contour linework */
+.contour {
+  position: absolute;
+  pointer-events: none;
+  overflow: visible;
+  fill: none;
+  stroke: var(--olive);
+  stroke-width: 1px;
+  stroke-linecap: round;
+  opacity: 0.32;
+}
+.contour path {
+  fill: none;
+}
+.heroContour {
+  right: -6%;
+  top: -12%;
+  width: min(86vw, 62rem);
+  height: auto;
+  aspect-ratio: 820 / 520;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 34%, #000 58%);
+  mask-image: linear-gradient(to right, transparent 0%, transparent 34%, #000 58%);
+}
+.storyContour {
+  left: -8%;
+  top: -6%;
+  width: min(80vw, 56rem);
+  height: auto;
+  aspect-ratio: 820 / 520;
+  opacity: 0.26;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 85%);
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 85%);
+}
+.contourDraw path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: scpDraw 3.4s cubic-bezier(0.3, 0.6, 0.2, 1) forwards;
+}
+@keyframes scpDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Undulating section edges */
+.edge {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: clamp(22px, 3.2vw, 40px);
+  pointer-events: none;
+  display: block;
+  z-index: 0;
+}
+.edgeTop {
+  top: 1px;
+  transform: translateY(-100%);
+}
+.edgeBand path {
+  fill: var(--olive-wash);
+}
+.edgeCharcoal path {
+  fill: var(--charcoal);
+}
+
+/* Overlapping photo composition with generous margins */
+.collage {
+  position: relative;
+  padding: 0 14% 16% 0;
+}
+.collage .collageMain {
+  aspect-ratio: 4 / 5;
+}
+.collage .collageInset {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 46%;
+  aspect-ratio: 1 / 1.18;
+  border: 7px solid var(--paper);
+  box-shadow: 0 16px 34px -22px rgba(38, 36, 31, 0.35);
+  z-index: 2;
+}
+.collage .collageWash {
+  position: absolute;
+  left: -10%;
+  top: 8%;
+  width: 70%;
+  aspect-ratio: 1;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@media (max-width: 52rem) {
+  .heroContour {
+    right: -30%;
+    top: auto;
+    bottom: 0;
+    width: 140vw;
+    -webkit-mask-image: none;
+    mask-image: none;
+    opacity: 0.22;
+  }
+  .collage {
+    padding: 0 10% 14% 0;
+    max-width: 30rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contourDraw path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Fade decorative layers out before the section edge so no hard seam shows. */
+.fadeBottom {
+  -webkit-mask-image: linear-gradient(to bottom, #000 80%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 80%, transparent 100%);
+}

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import s from './preview.module.css'
 import Reveal from './_components/Reveal'
 import { Arrow, Photo, PlayIcon } from './_components/ui'
+import { Contour, Edge, Wash } from './_components/Art'
 import { getAlbums, getFilms, getHome, getStory, matchPairs, formatDate } from './_lib/data'
 
 export const revalidate = 300
@@ -18,8 +19,13 @@ export default async function PreviewHome() {
   return (
     <>
       {/* HERO */}
-      <section className={s.hero} aria-labelledby="scp-h1">
-        <div className={`${s.wrap} ${s.heroGrid}`}>
+      <section className={`${s.hero} ${s.artSection} ${s.grain}`} aria-labelledby="scp-h1">
+        <div className={`${s.artLayer} ${s.fadeBottom}`} aria-hidden="true">
+          <Wash tone="olive" className={s.heroWashA} />
+          <Wash tone="sand" className={s.heroWashB} />
+          <Contour variant="ridge" animate className={s.heroContour} />
+        </div>
+        <div className={`${s.wrap} ${s.heroGrid} ${s.above}`}>
           <div className={s.heroCopy}>
             <p className={s.eyebrow}>Story Cruz Films · {story.location}</p>
             <h1 id="scp-h1" className={s.h1}>
@@ -57,8 +63,8 @@ export default async function PreviewHome() {
       </section>
 
       {/* TWO DOORS — equal weight */}
-      <section className={s.section} style={{ paddingTop: 0 }} aria-labelledby="scp-two">
-        <div className={s.wrap}>
+      <section className={`${s.section} ${s.artSection}`} style={{ paddingTop: 0 }} aria-labelledby="scp-two">
+        <div className={`${s.wrap} ${s.above}`}>
           <Reveal>
             <p className={s.eyebrow}>Two ways we tell your story</p>
             <h2 id="scp-two" className={s.h2} style={{ maxWidth: '40rem' }}>
@@ -123,12 +129,24 @@ export default async function PreviewHome() {
         </section>
       )}
 
-      {/* OUR APPROACH — existing approved copy */}
-      <section className={`${s.section} ${pairs.length ? '' : s.band}`} aria-labelledby="scp-approach">
-        <div className={`${s.wrap} ${s.split}`}>
+      {/* OUR APPROACH — existing approved copy, with a fine-art collage */}
+      <section className={`${s.section} ${s.artSection} ${s.grain} ${pairs.length ? '' : s.band}`} aria-labelledby="scp-approach">
+        {!pairs.length && <Edge fill="band" className={s.edgeTop} />}
+        <div className={s.artLayer} aria-hidden="true">
+          <Contour variant="drift" className={s.storyContour} />
+        </div>
+        <div className={`${s.wrap} ${s.split} ${s.above}`}>
           <Reveal>
-            <div className={s.frame}>
-              <Photo src={story.christineImageUrl ?? story.aboutImageUrl} alt="Quay and Christine of Story Cruz Films" sizes="(max-width: 52rem) 100vw, 40vw" />
+            <div className={s.collage}>
+              <Wash tone="sand" className={s.collageWash} />
+              <div className={`${s.frame} ${s.collageMain}`}>
+                <Photo src={story.christineImageUrl ?? story.aboutImageUrl} alt="Christine of Story Cruz Films" sizes="(max-width: 52rem) 80vw, 32vw" />
+              </div>
+              {story.christineImageUrl && story.aboutImageUrl && (
+                <div className={`${s.frame} ${s.collageInset}`}>
+                  <Photo src={story.aboutImageUrl} alt="About Story Cruz Films" sizes="(max-width: 52rem) 40vw, 16vw" />
+                </div>
+              )}
             </div>
           </Reveal>
           <Reveal delay={100}>
@@ -169,8 +187,9 @@ export default async function PreviewHome() {
       )}
 
       {/* CTA */}
-      <section className={`${s.section} ${s.cta}`} aria-labelledby="scp-cta">
-        <div className={`${s.wrap} ${s.narrow}`}>
+      <section className={`${s.section} ${s.cta} ${s.artSection}`} aria-labelledby="scp-cta">
+        <Edge fill="charcoal" className={s.edgeTop} />
+        <div className={`${s.wrap} ${s.narrow} ${s.above}`}>
           <h2 id="scp-cta" className={s.h2}>Let’s talk about <em>your day.</em></h2>
           <p>We’d love to hear your story.</p>
           <div className={s.btnRow}>
